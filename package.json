@@ -1,0 +1,32 @@
+{
+  "name": "osmsat-model-server",
+  "version": "1.0.0",
+  "description": "API server for sharing TensorFlow.js models between osmsat users",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "multer": "^1.4.5-lts.1",
+    "pg": "^8.11.3",
+    "bcrypt": "^5.1.1",
+    "jsonwebtoken": "^9.0.2",
+    "uuid": "^9.0.1",
+    "yamljs": "^0.3.0",
+    "compression": "^1.7.4",
+    "helmet": "^7.1.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3"
+  },
+  "keywords": ["tensorflowjs", "models", "api", "osmsat"],
+  "author": "",
+  "license": "MIT"
+}

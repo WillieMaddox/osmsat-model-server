@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: osmsat_models
+      POSTGRES_USER: osmsat
+      POSTGRES_PASSWORD: osmsat123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U osmsat"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build: .
+    ports:
+      - "3001:3001"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=osmsat_models
+      - DB_USER=osmsat
+      - DB_PASSWORD=osmsat123
+      - JWT_SECRET=your-production-secret-key-here
+    volumes:
+      - ./uploads:/app/uploads
+      - ./public:/app/public
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
