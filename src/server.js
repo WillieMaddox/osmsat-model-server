@@ -40,6 +40,11 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+app.get('/api/auth/registration-enabled', (req, res) => {
+  const registrationEnabled = process.env.DISABLE_REGISTRATION !== 'true';
+  res.json({ enabled: registrationEnabled });
+});
+
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });

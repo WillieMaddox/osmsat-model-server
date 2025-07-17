@@ -6,6 +6,10 @@ const { pool } = require('../database');
 const router = express.Router();
 
 router.post('/register', async (req, res) => {
+  if (process.env.DISABLE_REGISTRATION === 'true') {
+    return res.status(403).json({ error: 'Registration is disabled' });
+  }
+
   const { username, email, password } = req.body;
 
   if (!username || !email || !password) {
