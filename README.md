@@ -104,6 +104,7 @@ Models can be configured for specific zoom levels (8-21) to optimize performance
 - `DB_NAME` - Database name
 - `DB_USER` - Database user
 - `DB_PASSWORD` - Database password
+- `DISABLE_REGISTRATION` - Set to `true` to disable new user registration (default: false)
 
 ## Web Interface
 
