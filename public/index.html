@@ -204,15 +204,18 @@
     <script>
         let authToken = localStorage.getItem('authToken');
         let currentUser = null;
+        let registrationEnabled = true;
 
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM loaded, setting up event handlers');
             
-            if (authToken) {
-                fetchCurrentUser().then(() => {
-                    showLoggedInState();
-                });
-            }
+            fetchRegistrationStatus().then(() => {
+                if (authToken) {
+                    fetchCurrentUser().then(() => {
+                        showLoggedInState();
+                    });
+                }
+            });
 
             const showLoginBtn = document.getElementById('showLogin');
             const showRegisterBtn = document.getElementById('showRegister');
@@ -231,6 +234,10 @@
             if (showRegisterBtn) {
                 showRegisterBtn.onclick = function() {
                     console.log('Register button clicked');
+                    if (!registrationEnabled) {
+                        alert('Registration is currently disabled');
+                        return;
+                    }
                     document.getElementById('registerForm').classList.add('active');
                     document.getElementById('loginForm').classList.remove('active');
                 };
@@ -271,10 +278,10 @@
 
         function showLoggedOutState() {
             document.getElementById('showLogin').classList.remove('hidden');
-            document.getElementById('showRegister').classList.remove('hidden');
             document.getElementById('userInfo').classList.add('hidden');
             document.getElementById('logout').classList.add('hidden');
             document.getElementById('uploadSection').classList.add('hidden');
+            updateRegistrationUI();
         }
 
         function setupFileDropZone() {
@@ -665,6 +672,35 @@
                 authToken = null;
                 currentUser = null;
                 showLoggedOutState();
+            }
+        }
+
+        async function fetchRegistrationStatus() {
+            try {
+                const response = await fetch('/api/auth/registration-enabled');
+                if (response.ok) {
+                    const data = await response.json();
+                    registrationEnabled = data.enabled;
+                    updateRegistrationUI();
+                } else {
+                    console.error('Failed to fetch registration status');
+                    registrationEnabled = true; // Default to enabled
+                }
+            } catch (err) {
+                console.error('Failed to fetch registration status:', err);
+                registrationEnabled = true; // Default to enabled
+            }
+        }
+
+        function updateRegistrationUI() {
+            const showRegisterBtn = document.getElementById('showRegister');
+            const registerForm = document.getElementById('registerForm');
+            
+            if (registrationEnabled) {
+                showRegisterBtn.classList.remove('hidden');
+            } else {
+                showRegisterBtn.classList.add('hidden');
+                registerForm.classList.remove('active');
             }
         }
 
