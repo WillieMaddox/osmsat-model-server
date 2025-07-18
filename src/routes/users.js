@@ -26,7 +26,7 @@ router.get('/me/models', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT 
-        m.id, m.name, m.description, m.task_type, m.zoom_level, m.is_public, m.created_at,
+        m.id, m.name, m.description, m.task_type, m.zoom_level, m.visibility, m.created_at,
         mv.version, mv.file_size, mv.metadata
       FROM models m
       LEFT JOIN model_versions mv ON m.id = mv.model_id AND mv.is_active = true

@@ -34,18 +34,28 @@ router.get('/', optionalAuth, async (req, res) => {
 
     let query = `
       SELECT 
-        m.id, m.name, m.description, m.task_type, m.zoom_level, m.is_public, m.created_at,
+        m.id, m.name, m.description, m.task_type, m.zoom_level, m.visibility, m.created_at,
         u.username as owner,
         mv.version, mv.file_size, mv.metadata
       FROM models m
       JOIN users u ON m.user_id = u.id
       LEFT JOIN model_versions mv ON m.id = mv.model_id AND mv.is_active = true
-      WHERE m.is_public = true
+      WHERE m.visibility = 'public'
     `;
 
     const params = [];
     if (req.user) {
-      query += ` OR m.user_id = $${params.length + 1}`;
+      // Authenticated users can see public + members + their own private models
+      query = `
+        SELECT 
+          m.id, m.name, m.description, m.task_type, m.zoom_level, m.visibility, m.created_at,
+          u.username as owner,
+          mv.version, mv.file_size, mv.metadata
+        FROM models m
+        JOIN users u ON m.user_id = u.id
+        LEFT JOIN model_versions mv ON m.id = mv.model_id AND mv.is_active = true
+        WHERE (m.visibility IN ('public', 'members') OR m.user_id = $${params.length + 1})
+      `;
       params.push(req.user.userId);
     }
 
@@ -68,18 +78,30 @@ router.get('/', optionalAuth, async (req, res) => {
 router.get('/:id', optionalAuth, async (req, res) => {
   try {
     const { id } = req.params;
+    let accessCondition;
+    const params = [id];
+    
+    if (req.user) {
+      // Authenticated users can access public, members, and their own private models
+      accessCondition = `(m.visibility IN ('public', 'members') OR m.user_id = $2)`;
+      params.push(req.user.userId);
+    } else {
+      // Anonymous users can only access public models
+      accessCondition = `m.visibility = 'public'`;
+    }
+    
     const query = `
       SELECT 
-        m.id, m.name, m.description, m.task_type, m.zoom_level, m.is_public, m.created_at,
+        m.id, m.name, m.description, m.task_type, m.zoom_level, m.visibility, m.created_at,
         u.username as owner,
         mv.version, mv.file_size, mv.metadata
       FROM models m
       JOIN users u ON m.user_id = u.id
       LEFT JOIN model_versions mv ON m.id = mv.model_id AND mv.is_active = true
-      WHERE m.id = $1 AND (m.is_public = true OR m.user_id = $2)
+      WHERE m.id = $1 AND ${accessCondition}
     `;
 
-    const result = await pool.query(query, [id, req.user?.userId || null]);
+    const result = await pool.query(query, params);
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Model not found' });
@@ -94,7 +116,7 @@ router.get('/:id', optionalAuth, async (req, res) => {
 
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { name, description, task_type, zoom_level = 19, is_public = false } = req.body;
+    const { name, description, task_type, zoom_level = 19, visibility = 'private' } = req.body;
 
     if (!name || !task_type) {
       return res.status(400).json({ error: 'Name and task_type are required' });
@@ -108,9 +130,13 @@ router.post('/', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Zoom level must be between 8 and 21' });
     }
 
+    if (!['private', 'members', 'public'].includes(visibility)) {
+      return res.status(400).json({ error: 'Invalid visibility. Must be private, members, or public' });
+    }
+
     const result = await pool.query(
-      'INSERT INTO models (name, description, task_type, zoom_level, user_id, is_public) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-      [name, description, task_type, zoom_level, req.user.userId, is_public]
+      'INSERT INTO models (name, description, task_type, zoom_level, user_id, visibility) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      [name, description, task_type, zoom_level, req.user.userId, visibility]
     );
 
     res.status(201).json(result.rows[0]);
@@ -178,9 +204,21 @@ router.get('/:id/files', optionalAuth, async (req, res) => {
   try {
     const { id } = req.params;
 
+    let accessCondition;
+    const params = [id];
+    
+    if (req.user) {
+      // Authenticated users can access public, members, and their own private models
+      accessCondition = `(visibility IN ('public', 'members') OR user_id = $2)`;
+      params.push(req.user.userId);
+    } else {
+      // Anonymous users can only access public models
+      accessCondition = `visibility = 'public'`;
+    }
+    
     const modelCheck = await pool.query(
-      'SELECT id FROM models WHERE id = $1 AND (is_public = true OR user_id = $2)',
-      [id, req.user?.userId || null]
+      `SELECT id FROM models WHERE id = $1 AND ${accessCondition}`,
+      params
     );
 
     if (modelCheck.rows.length === 0) {
@@ -206,9 +244,21 @@ router.get('/:id/download/:filename', optionalAuth, async (req, res) => {
   try {
     const { id, filename } = req.params;
 
+    let accessCondition;
+    const params = [id];
+    
+    if (req.user) {
+      // Authenticated users can access public, members, and their own private models
+      accessCondition = `(visibility IN ('public', 'members') OR user_id = $2)`;
+      params.push(req.user.userId);
+    } else {
+      // Anonymous users can only access public models
+      accessCondition = `visibility = 'public'`;
+    }
+    
     const modelCheck = await pool.query(
-      'SELECT id FROM models WHERE id = $1 AND (is_public = true OR user_id = $2)',
-      [id, req.user?.userId || null]
+      `SELECT id FROM models WHERE id = $1 AND ${accessCondition}`,
+      params
     );
 
     if (modelCheck.rows.length === 0) {
@@ -233,15 +283,15 @@ router.get('/:id/download/:filename', optionalAuth, async (req, res) => {
 router.patch('/:id/visibility', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const { is_public } = req.body;
+    const { visibility } = req.body;
 
-    if (typeof is_public !== 'boolean') {
-      return res.status(400).json({ error: 'is_public must be a boolean' });
+    if (!visibility || !['private', 'members', 'public'].includes(visibility)) {
+      return res.status(400).json({ error: 'visibility must be private, members, or public' });
     }
 
     const result = await pool.query(
-      'UPDATE models SET is_public = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND user_id = $3 RETURNING *',
-      [is_public, id, req.user.userId]
+      'UPDATE models SET visibility = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND user_id = $3 RETURNING *',
+      [visibility, id, req.user.userId]
     );
 
     if (result.rows.length === 0) {
