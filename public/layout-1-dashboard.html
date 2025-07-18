@@ -5,6 +5,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OSMSAT Model Server - Dashboard Layout</title>
     <style>
+        :root {
+            /* Light theme colors */
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9;
+            --bg-quaternary: #e2e8f0;
+            --text-primary: #334155;
+            --text-secondary: #475569;
+            --text-tertiary: #64748b;
+            --border-primary: #e2e8f0;
+            --border-secondary: #d1d5db;
+            --accent-primary: #3b82f6;
+            --accent-hover: #2563eb;
+            --success: #10b981;
+            --success-hover: #059669;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --warning: #f59e0b;
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+        
+        [data-theme="dark"] {
+            /* Dark theme colors */
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --bg-quaternary: #475569;
+            --text-primary: #f1f5f9;
+            --text-secondary: #e2e8f0;
+            --text-tertiary: #94a3b8;
+            --border-primary: #334155;
+            --border-secondary: #475569;
+            --accent-primary: #3b82f6;
+            --accent-hover: #2563eb;
+            --success: #10b981;
+            --success-hover: #059669;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --warning: #f59e0b;
+            --shadow: rgba(0, 0, 0, 0.3);
+        }
+        
         * {
             margin: 0;
             padding: 0;
@@ -13,9 +55,10 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: #f8fafc;
-            color: #334155;
+            background: var(--bg-primary);
+            color: var(--text-primary);
             line-height: 1.6;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
         
         .main-container {
@@ -25,15 +68,16 @@
         }
         
         .sidebar {
-            background: white;
-            border-right: 1px solid #e2e8f0;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-primary);
             padding: 24px;
-            box-shadow: 2px 0 8px rgba(0,0,0,0.04);
+            box-shadow: 2px 0 8px var(--shadow);
             overflow-y: auto;
             height: 100vh;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
         }
         
         .sidebar-content {
@@ -42,7 +86,7 @@
         
         .sidebar-bottom {
             flex-shrink: 0;
-            border-top: 1px solid #e2e8f0;
+            border-top: 1px solid var(--border-primary);
             padding-top: 16px;
             margin-top: 16px;
         }
@@ -50,19 +94,19 @@
         .sidebar h1 {
             font-size: 24px;
             font-weight: 700;
-            color: #1e293b;
+            color: var(--text-primary);
             margin-bottom: 24px;
         }
         
         .sidebar #authSection {
             padding: 16px 0;
-            border-top: 1px solid #e2e8f0;
+            border-top: 1px solid var(--border-primary);
         }
         
         .sidebar .nav-item {
             display: block;
             padding: 12px 16px;
-            color: #475569;
+            color: var(--text-secondary);
             text-decoration: none;
             border-radius: 8px;
             margin-bottom: 8px;
@@ -75,12 +119,12 @@
         }
         
         .sidebar .nav-item:hover {
-            background: #f1f5f9;
-            color: #1e293b;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
         }
         
         .sidebar .nav-item.active {
-            background: #3b82f6;
+            background: var(--accent-primary);
             color: white;
         }
         
@@ -107,28 +151,29 @@
             align-items: center;
             width: 100%;
             padding: 12px 16px;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-primary);
             border-radius: 6px;
             font-size: 14px;
             cursor: pointer;
             transition: all 0.2s;
+            color: var(--text-primary);
         }
         
         .user-dropdown-toggle:hover {
-            background: #f1f5f9;
-            border-color: #d1d5db;
+            background: var(--bg-tertiary);
+            border-color: var(--border-secondary);
         }
         
         .user-dropdown-toggle:focus {
             outline: none;
-            border-color: #3b82f6;
+            border-color: var(--accent-primary);
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
         
         .dropdown-arrow {
             font-size: 12px;
-            color: #64748b;
+            color: var(--text-tertiary);
             transition: transform 0.2s;
         }
         
@@ -141,10 +186,10 @@
             bottom: 100%;
             left: 0;
             right: 0;
-            background: white;
-            border: 1px solid #e2e8f0;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
             border-radius: 6px;
-            box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 -4px 6px -1px var(--shadow);
             z-index: 1000;
             opacity: 0;
             visibility: hidden;
@@ -169,16 +214,16 @@
             transition: background-color 0.2s;
             border-radius: 4px;
             font-size: 14px;
-            color: #374151;
+            color: var(--text-primary);
         }
         
         .dropdown-item:hover {
-            background: #f3f4f6;
+            background: var(--bg-tertiary);
         }
         
         .dropdown-item:focus {
             outline: none;
-            background: #f3f4f6;
+            background: var(--bg-tertiary);
         }
         
         .sidebar .auth-form {
@@ -192,7 +237,7 @@
         .sidebar .auth-form h3 {
             font-size: 16px;
             margin-bottom: 16px;
-            color: #1e293b;
+            color: var(--text-primary);
         }
         
         .sidebar .auth-form .form-control {
@@ -213,7 +258,7 @@
         .nav-section h3 {
             font-size: 14px;
             font-weight: 600;
-            color: #64748b;
+            color: var(--text-tertiary);
             margin-bottom: 12px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -222,7 +267,7 @@
         .nav-item {
             display: block;
             padding: 12px 16px;
-            color: #475569;
+            color: var(--text-secondary);
             text-decoration: none;
             border-radius: 8px;
             margin-bottom: 4px;
@@ -235,18 +280,20 @@
         }
         
         .nav-item:hover {
-            background: #f1f5f9;
-            color: #1e293b;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
         }
         
         .nav-item.active {
-            background: #3b82f6;
+            background: var(--accent-primary);
             color: white;
         }
         
         .main-content {
             padding: 24px;
             overflow-y: auto;
+            background: var(--bg-primary);
+            transition: background-color 0.3s ease;
         }
         
         .header {
@@ -255,15 +302,16 @@
             align-items: center;
             margin-bottom: 32px;
             padding: 24px;
-            background: white;
+            background: var(--bg-secondary);
             border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px var(--shadow);
+            transition: background-color 0.3s ease;
         }
         
         .header h2 {
             font-size: 28px;
             font-weight: 700;
-            color: #1e293b;
+            color: var(--text-primary);
         }
         
         .user-actions {
@@ -283,34 +331,35 @@
         }
         
         .btn-primary {
-            background: #3b82f6;
+            background: var(--accent-primary);
             color: white;
         }
         
         .btn-primary:hover {
-            background: #2563eb;
+            background: var(--accent-hover);
         }
         
         .btn-secondary {
-            background: #f1f5f9;
-            color: #475569;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
         }
         
         .btn-secondary:hover {
-            background: #e2e8f0;
+            background: var(--bg-quaternary);
         }
         
         .content-section {
-            background: white;
+            background: var(--bg-secondary);
             border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px var(--shadow);
             margin-bottom: 24px;
             overflow: hidden;
+            transition: background-color 0.3s ease;
         }
         
         .section-header {
             padding: 20px 24px;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid var(--border-primary);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -319,7 +368,7 @@
         .section-header h3 {
             font-size: 20px;
             font-weight: 600;
-            color: #1e293b;
+            color: var(--text-primary);
         }
         
         .upload-section {
@@ -341,20 +390,22 @@
         .form-group label {
             font-weight: 500;
             margin-bottom: 8px;
-            color: #374151;
+            color: var(--text-primary);
         }
         
         .form-control {
             padding: 12px;
-            border: 1px solid #d1d5db;
+            border: 1px solid var(--border-secondary);
             border-radius: 8px;
             font-size: 14px;
             transition: all 0.2s;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
         }
         
         .form-control:focus {
             outline: none;
-            border-color: #3b82f6;
+            border-color: var(--accent-primary);
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
         
@@ -364,12 +415,12 @@
         }
         
         .models-table th {
-            background: #f8fafc;
+            background: var(--bg-primary);
             padding: 16px;
             text-align: left;
             font-weight: 600;
-            color: #374151;
-            border-bottom: 1px solid #e2e8f0;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-primary);
             position: sticky;
             top: 0;
             cursor: pointer;
@@ -377,7 +428,7 @@
         }
         
         .models-table th:hover {
-            background: #f1f5f9;
+            background: var(--bg-tertiary);
         }
         
         .models-table th.sortable::after {
@@ -398,12 +449,46 @@
         
         .models-table td {
             padding: 16px;
-            border-bottom: 1px solid #f1f5f9;
+            border-bottom: 1px solid var(--border-primary);
             vertical-align: middle;
+            color: var(--text-primary);
+        }
+        
+        .models-table td:nth-child(3), /* Task Type */
+        .models-table td:nth-child(4), /* Visibility */
+        .models-table td:nth-child(5) { /* Zoom Level */
+            text-align: center;
+        }
+        
+        .models-table th:nth-child(3), /* Task Type */
+        .models-table th:nth-child(4), /* Visibility */
+        .models-table th:nth-child(5) { /* Zoom Level */
+            text-align: center;
+        }
+        
+        .models-table select {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-secondary);
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        
+        .models-table select:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--border-primary);
+        }
+        
+        .models-table select:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
         }
         
         .models-table tr:hover {
-            background: #f8fafc;
+            background: var(--bg-primary);
         }
         
         .task-badge {
@@ -419,6 +504,10 @@
         .task-obb { background: #f3e8ff; color: #7c3aed; }
         .task-pose { background: #dcfce7; color: #16a34a; }
         
+        [data-theme="dark"] .task-detect { background: #1d4ed8; color: #dbeafe; }
+        [data-theme="dark"] .task-obb { background: #7c3aed; color: #f3e8ff; }
+        [data-theme="dark"] .task-pose { background: #16a34a; color: #dcfce7; }
+        
         .visibility-badge {
             display: inline-block;
             padding: 4px 8px;
@@ -431,6 +520,10 @@
         .visibility-members { background: #dbeafe; color: #1d4ed8; }
         .visibility-private { background: #fef2f2; color: #dc2626; }
         
+        [data-theme="dark"] .visibility-public { background: #16a34a; color: #dcfce7; }
+        [data-theme="dark"] .visibility-members { background: #1d4ed8; color: #dbeafe; }
+        [data-theme="dark"] .visibility-private { background: #dc2626; color: #fef2f2; }
+        
         .action-buttons {
             display: flex;
             gap: 8px;
@@ -442,21 +535,21 @@
         }
         
         .btn-success {
-            background: #10b981;
+            background: var(--success);
             color: white;
         }
         
         .btn-success:hover {
-            background: #059669;
+            background: var(--success-hover);
         }
         
         .btn-danger {
-            background: #ef4444;
+            background: var(--danger);
             color: white;
         }
         
         .btn-danger:hover {
-            background: #dc2626;
+            background: var(--danger-hover);
         }
         
         .table-container {
@@ -481,24 +574,26 @@
         }
         
         .file-drop-zone {
-            border: 2px dashed #3b82f6;
+            border: 2px dashed var(--accent-primary);
             border-radius: 8px;
             padding: 40px 20px;
             text-align: center;
-            background: #f8f9fa;
+            background: var(--bg-tertiary);
             cursor: pointer;
             transition: all 0.3s ease;
             margin: 10px 0;
+            color: var(--text-primary);
         }
         
         .file-drop-zone:hover {
-            border-color: #2563eb;
-            background: #e3f2fd;
+            border-color: var(--accent-hover);
+            background: var(--bg-quaternary);
         }
         
         .file-drop-zone.drag-over {
-            border-color: #28a745;
-            background: #d4edda;
+            border-color: var(--success);
+            background: var(--success);
+            opacity: 0.1;
             border-style: solid;
         }
         
@@ -510,11 +605,12 @@
         }
         
         .file-item {
-            background: #e9ecef;
+            background: var(--bg-quaternary);
             padding: 5px 10px;
             margin: 2px 0;
             border-radius: 4px;
             font-size: 14px;
+            color: var(--text-primary);
         }
         
         .file-validation {
@@ -525,15 +621,15 @@
         }
         
         .validation-error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+            background: var(--danger);
+            color: white;
+            border: 1px solid var(--danger-hover);
         }
         
         .validation-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+            background: var(--success);
+            color: white;
+            border: 1px solid var(--success-hover);
         }
         
         /* Modal styles */
@@ -555,14 +651,15 @@
         }
         
         .modal-content {
-            background: white;
+            background: var(--bg-secondary);
             border-radius: 12px;
             padding: 24px;
             max-width: 500px;
             width: 90%;
             max-height: 80vh;
             overflow-y: auto;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 10px 30px var(--shadow);
+            transition: background-color 0.3s ease;
         }
         
         .modal-header {
@@ -575,7 +672,7 @@
         .modal-title {
             font-size: 20px;
             font-weight: 600;
-            color: #1e293b;
+            color: var(--text-primary);
             margin: 0;
         }
         
@@ -584,7 +681,7 @@
             border: none;
             font-size: 24px;
             cursor: pointer;
-            color: #64748b;
+            color: var(--text-tertiary);
             padding: 0;
             width: 30px;
             height: 30px;
@@ -594,7 +691,7 @@
         }
         
         .modal-close:hover {
-            color: #1e293b;
+            color: var(--text-primary);
         }
 
         @media (max-width: 768px) {
@@ -623,6 +720,8 @@
         <aside class="sidebar">
             <div class="sidebar-content">
                 <h1>OSMSAT</h1>
+                
+                <button class="nav-item" id="themeToggle">🌙 Dark Mode</button>
                 
                 <button class="nav-item hidden" id="uploadModelToggle">Upload Model</button>
             </div>
@@ -831,9 +930,11 @@
                 if (authToken) {
                     fetchCurrentUser().then(() => {
                         showLoggedInState();
+                        loadModels();
                     });
                 } else {
                     showLoggedOutState();
+                    loadModels();
                 }
             });
 
@@ -891,7 +992,8 @@
             setupModelNameValidation();
             setupModalCloseOnOutsideClick();
             setupUserDropdown();
-            loadModels();
+            setupThemeToggle();
+            setupLoginKeyBinding();
         });
 
         function setupModelNameValidation() {
@@ -1432,6 +1534,59 @@
             const userDropdown = document.getElementById('userInfo');
             if (userDropdown) {
                 userDropdown.classList.remove('open');
+            }
+        }
+        
+        function setupThemeToggle() {
+            const themeToggle = document.getElementById('themeToggle');
+            if (themeToggle) {
+                themeToggle.addEventListener('click', toggleTheme);
+            }
+            
+            // Load saved theme or default to light
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            setTheme(savedTheme);
+        }
+        
+        function toggleTheme() {
+            const currentTheme = document.body.getAttribute('data-theme') || 'light';
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            setTheme(newTheme);
+        }
+        
+        function setTheme(theme) {
+            document.body.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            
+            const themeToggle = document.getElementById('themeToggle');
+            if (themeToggle) {
+                if (theme === 'dark') {
+                    themeToggle.textContent = '☀️ Light Mode';
+                } else {
+                    themeToggle.textContent = '🌙 Dark Mode';
+                }
+            }
+        }
+        
+        function setupLoginKeyBinding() {
+            const loginModal = document.getElementById('loginModal');
+            if (loginModal) {
+                loginModal.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        login();
+                    }
+                });
+            }
+            
+            const registerModal = document.getElementById('registerModal');
+            if (registerModal) {
+                registerModal.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        register();
+                    }
+                });
             }
         }
 
