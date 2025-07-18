@@ -30,7 +30,7 @@ const createTables = async () => {
         task_type VARCHAR(20) NOT NULL CHECK (task_type IN ('detect', 'obb', 'pose')),
         zoom_level INTEGER DEFAULT 19 CHECK (zoom_level BETWEEN 8 AND 21),
         user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-        is_public BOOLEAN DEFAULT false,
+        visibility VARCHAR(10) DEFAULT 'private' CHECK (visibility IN ('private', 'members', 'public')),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
@@ -51,7 +51,7 @@ const createTables = async () => {
 
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_models_task_type ON models(task_type);
-      CREATE INDEX IF NOT EXISTS idx_models_public ON models(is_public);
+      CREATE INDEX IF NOT EXISTS idx_models_visibility ON models(visibility);
       CREATE INDEX IF NOT EXISTS idx_model_versions_active ON model_versions(is_active);
     `);
 
@@ -63,6 +63,61 @@ const createTables = async () => {
       console.log('Migration: zoom_level column added/verified');
     } catch (err) {
       console.log('Migration note: zoom_level column may already exist');
+    }
+
+    // Migrate from is_public to visibility column (migration)
+    try {
+      // Check if is_public column still exists
+      const columnCheck = await client.query(`
+        SELECT column_name FROM information_schema.columns 
+        WHERE table_name = 'models' AND column_name = 'is_public';
+      `);
+      
+      if (columnCheck.rows.length > 0) {
+        console.log('Migration: Converting is_public to visibility column...');
+        
+        // Add visibility column if it doesn't exist
+        await client.query(`
+          ALTER TABLE models ADD COLUMN IF NOT EXISTS visibility VARCHAR(10);
+        `);
+        
+        // Migrate existing data
+        await client.query(`
+          UPDATE models SET visibility = CASE 
+            WHEN is_public = true THEN 'public'
+            WHEN is_public = false THEN 'private'
+            ELSE 'private'
+          END
+          WHERE visibility IS NULL;
+        `);
+        
+        // Set constraints
+        await client.query(`
+          ALTER TABLE models ALTER COLUMN visibility SET NOT NULL;
+        `);
+        await client.query(`
+          ALTER TABLE models ALTER COLUMN visibility SET DEFAULT 'private';
+        `);
+        await client.query(`
+          ALTER TABLE models ADD CONSTRAINT models_visibility_check 
+          CHECK (visibility IN ('private', 'members', 'public'));
+        `);
+        
+        // Create new index
+        await client.query(`
+          CREATE INDEX IF NOT EXISTS idx_models_visibility ON models(visibility);
+        `);
+        
+        // Drop old column and index
+        await client.query(`DROP INDEX IF EXISTS idx_models_public;`);
+        await client.query(`ALTER TABLE models DROP COLUMN is_public;`);
+        
+        console.log('Migration: Successfully migrated from is_public to visibility');
+      } else {
+        console.log('Migration: visibility column already exists, skipping is_public migration');
+      }
+    } catch (err) {
+      console.error('Migration error for visibility column:', err);
     }
 
     console.log('Database tables created successfully');
