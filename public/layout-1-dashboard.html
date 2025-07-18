@@ -43,8 +43,8 @@
         .sidebar-bottom {
             flex-shrink: 0;
             border-top: 1px solid #e2e8f0;
-            padding-top: 24px;
-            margin-top: 24px;
+            padding-top: 16px;
+            margin-top: 16px;
         }
         
         .sidebar h1 {
@@ -55,10 +55,8 @@
         }
         
         .sidebar #authSection {
-            margin: 16px 0;
             padding: 16px 0;
             border-top: 1px solid #e2e8f0;
-            border-bottom: 1px solid #e2e8f0;
         }
         
         .sidebar .nav-item {
@@ -97,14 +95,90 @@
             font-size: 14px;
         }
         
-        .sidebar #authSection #userInfo {
-            display: block;
-            margin-bottom: 16px;
-            padding: 12px;
+        .user-dropdown {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .user-dropdown-toggle {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 12px 16px;
             background: #f8fafc;
+            border: 1px solid #e2e8f0;
             border-radius: 6px;
             font-size: 14px;
-            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .user-dropdown-toggle:hover {
+            background: #f1f5f9;
+            border-color: #d1d5db;
+        }
+        
+        .user-dropdown-toggle:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .dropdown-arrow {
+            font-size: 12px;
+            color: #64748b;
+            transition: transform 0.2s;
+        }
+        
+        .user-dropdown.open .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+        
+        .user-dropdown-menu {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: all 0.2s;
+            margin-bottom: 4px;
+        }
+        
+        .user-dropdown.open .user-dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        .dropdown-item {
+            width: 100%;
+            padding: 12px 16px;
+            border: none;
+            background: none;
+            text-align: left;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #374151;
+        }
+        
+        .dropdown-item:hover {
+            background: #f3f4f6;
+        }
+        
+        .dropdown-item:focus {
+            outline: none;
+            background: #f3f4f6;
         }
         
         .sidebar .auth-form {
@@ -559,7 +633,16 @@
                 <div id="authSection">
                     <button id="showLogin" class="btn btn-secondary">Login</button>
                     <button id="showRegister" class="btn btn-secondary">Register</button>
-                    <span id="userInfo" class="hidden"><span id="username"></span></span>
+                    
+                    <div id="userInfo" class="user-dropdown hidden">
+                        <button id="userDropdownToggle" class="user-dropdown-toggle">
+                            <span id="username"></span>
+                            <span class="dropdown-arrow">▲</span>
+                        </button>
+                        <div id="userDropdownMenu" class="user-dropdown-menu">
+                            <button id="logout" class="dropdown-item">Logout</button>
+                        </div>
+                    </div>
                     
                     <div id="registerForm" class="auth-form">
                         <h3>Register</h3>
@@ -569,8 +652,6 @@
                         <button onclick="register()" class="btn btn-primary">Register</button>
                     </div>
                 </div>
-                
-                <button class="nav-item hidden" id="logout">Logout</button>
             </div>
         </aside>
         
@@ -793,6 +874,7 @@
             setupFileDropZone();
             setupModelNameValidation();
             setupModalCloseOnOutsideClick();
+            setupUserDropdown();
             loadModels();
         });
 
@@ -824,7 +906,6 @@
             const showLogin = document.getElementById('showLogin');
             const showRegister = document.getElementById('showRegister');
             const userInfo = document.getElementById('userInfo');
-            const logout = document.getElementById('logout');
             const inviteUser = document.getElementById('inviteUser');
             const uploadToggleBtn = document.getElementById('uploadModelToggle');
             const username = document.getElementById('username');
@@ -832,7 +913,6 @@
             if (showLogin) showLogin.classList.add('hidden');
             if (showRegister) showRegister.classList.add('hidden');
             if (userInfo) userInfo.classList.remove('hidden');
-            if (logout) logout.classList.remove('hidden');
             if (inviteUser) inviteUser.classList.remove('hidden');
             if (uploadToggleBtn) uploadToggleBtn.classList.remove('hidden');
             if (currentUser && username) {
@@ -844,17 +924,16 @@
             const showLogin = document.getElementById('showLogin');
             const showRegister = document.getElementById('showRegister');
             const userInfo = document.getElementById('userInfo');
-            const logout = document.getElementById('logout');
             const inviteUser = document.getElementById('inviteUser');
             const uploadSection = document.getElementById('uploadSection');
             const uploadToggleBtn = document.getElementById('uploadModelToggle');
 
             if (showLogin) showLogin.classList.remove('hidden');
             if (userInfo) userInfo.classList.add('hidden');
-            if (logout) logout.classList.add('hidden');
             if (inviteUser) inviteUser.classList.add('hidden');
             if (uploadSection) uploadSection.classList.add('hidden');
             if (uploadToggleBtn) uploadToggleBtn.classList.add('hidden');
+            closeUserDropdown(); // Close dropdown when logging out
             updateRegistrationUI();
         }
 
@@ -1287,6 +1366,39 @@
                         closeLoginModal();
                     }
                 });
+            }
+        }
+        
+        function setupUserDropdown() {
+            const userDropdownToggle = document.getElementById('userDropdownToggle');
+            const userDropdown = document.getElementById('userInfo');
+            
+            if (userDropdownToggle && userDropdown) {
+                userDropdownToggle.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    toggleUserDropdown();
+                });
+                
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!userDropdown.contains(e.target)) {
+                        closeUserDropdown();
+                    }
+                });
+            }
+        }
+        
+        function toggleUserDropdown() {
+            const userDropdown = document.getElementById('userInfo');
+            if (userDropdown) {
+                userDropdown.classList.toggle('open');
+            }
+        }
+        
+        function closeUserDropdown() {
+            const userDropdown = document.getElementById('userInfo');
+            if (userDropdown) {
+                userDropdown.classList.remove('open');
             }
         }
 
