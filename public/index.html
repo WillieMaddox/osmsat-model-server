@@ -843,9 +843,11 @@
                     }
                     
                     const visibilityToggle = isOwner ? 
-                        `<button onclick="toggleModelVisibility(${model.id}, '${model.visibility}')" style="font-size: 12px; padding: 4px 8px; margin-left: 10px;">
-                            Change Visibility
-                        </button>` : '';
+                        `<select onchange="updateModelVisibility(${model.id}, this.value)" style="font-size: 12px; padding: 4px 8px; margin-left: 10px;">
+                            <option value="private" ${model.visibility === 'private' ? 'selected' : ''}>Private (Owner only)</option>
+                            <option value="members" ${model.visibility === 'members' ? 'selected' : ''}>Members (All registered users)</option>
+                            <option value="public" ${model.visibility === 'public' ? 'selected' : ''}>Public (Everyone)</option>
+                        </select>` : '';
                     
                     const deleteButton = isOwner ? 
                         `<button onclick="deleteModel(${model.id})" style="background: #dc3545; margin-left: 10px;">Delete</button>` : '';
@@ -913,22 +915,7 @@
             }
         }
 
-        async function toggleModelVisibility(modelId, currentVisibility) {
-            // Show a selection dialog for the new visibility
-            const newVisibility = prompt(
-                `Current visibility: ${currentVisibility}\n\nChoose new visibility:\n- private (Owner only)\n- members (All registered users)\n- public (Everyone)\n\nEnter your choice:`,
-                currentVisibility
-            );
-            
-            if (!newVisibility || !['private', 'members', 'public'].includes(newVisibility.toLowerCase())) {
-                if (newVisibility !== null) { // Only show error if user didn't cancel
-                    alert('Invalid visibility. Please choose: private, members, or public');
-                }
-                return;
-            }
-            
-            const visibility = newVisibility.toLowerCase();
-            
+        async function updateModelVisibility(modelId, newVisibility) {
             try {
                 const response = await fetch(`/api/models/${modelId}/visibility`, {
                     method: 'PATCH',
@@ -936,7 +923,7 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${authToken}`
                     },
-                    body: JSON.stringify({ visibility: visibility })
+                    body: JSON.stringify({ visibility: newVisibility })
                 });
 
                 if (response.ok) {
