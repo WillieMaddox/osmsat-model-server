@@ -236,7 +236,7 @@
         
         .form-row {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr;
             gap: 16px;
             margin-bottom: 16px;
         }
@@ -518,6 +518,12 @@
                 grid-template-columns: 1fr;
             }
         }
+        
+        @media (max-width: 1024px) {
+            .form-row {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -532,7 +538,7 @@
             <div id="authSection">
                 <button id="showLogin" class="btn btn-secondary">Login</button>
                 <button id="showRegister" class="btn btn-secondary">Register</button>
-                <span id="userInfo" class="hidden">Welcome, <span id="username"></span>!</span>
+                <span id="userInfo" class="hidden"><span id="username"></span></span>
                 
                 <div id="loginForm" class="auth-form">
                     <h3>Login</h3>
@@ -557,7 +563,6 @@
             <div id="uploadSection" class="content-section hidden">
                 <div class="section-header">
                     <h3>Upload Model</h3>
-                    <button class="btn btn-secondary">Advanced Upload</button>
                 </div>
                 <div class="upload-section">
                     <div class="form-row">
@@ -573,8 +578,6 @@
                                 <option value="pose">Pose</option>
                             </select>
                         </div>
-                    </div>
-                    <div class="form-row">
                         <div class="form-group">
                             <label for="modelVisibility">Visibility</label>
                             <select id="modelVisibility" class="form-control">
@@ -582,6 +585,12 @@
                                 <option value="members">Members (All registered users)</option>
                                 <option value="public">Public (Everyone)</option>
                             </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="modelVersion">Version</label>
+                            <input type="text" id="modelVersion" class="form-control" placeholder="Version">
                         </div>
                         <div class="form-group">
                             <label for="modelZoomLevel">Zoom Level</label>
@@ -602,18 +611,14 @@
                                 <option value="21">21</option>
                             </select>
                         </div>
+                        <div class="form-group">
+                            <label for="modelCreated">Created Date</label>
+                            <input type="text" id="modelCreated" class="form-control" placeholder="Auto-filled" readonly>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="modelDescription">Description</label>
-                        <textarea id="modelDescription" class="form-control" placeholder="Model Description"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="modelVersion">Version</label>
-                        <input type="text" id="modelVersion" class="form-control" placeholder="Version">
-                    </div>
-                    <div class="form-group">
-                        <label for="modelCreated">Created Date</label>
-                        <input type="text" id="modelCreated" class="form-control" placeholder="Created Date" readonly>
+                        <textarea id="modelDescription" class="form-control" placeholder="Model Description" rows="2"></textarea>
                     </div>
                     
                     <div id="fileDropZone" class="file-drop-zone">
