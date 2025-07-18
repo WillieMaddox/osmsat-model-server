@@ -729,7 +729,6 @@
                 if (response.ok) {
                     const data = await response.json();
                     document.getElementById('inviteLink').value = data.url;
-                    alert('Invite link has been reset!');
                 } else {
                     const errorData = await response.json();
                     alert('Failed to reset invite link: ' + errorData.error);
@@ -746,11 +745,9 @@
             
             try {
                 document.execCommand('copy');
-                alert('Invite link copied to clipboard!');
             } catch (err) {
                 if (navigator.clipboard) {
                     navigator.clipboard.writeText(inviteLink.value).then(() => {
-                        alert('Invite link copied to clipboard!');
                     }).catch(() => {
                         alert('Failed to copy invite link. Please copy manually.');
                     });
