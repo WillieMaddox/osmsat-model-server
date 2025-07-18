@@ -181,7 +181,15 @@
         </div>
         <input type="text" id="modelVersion" placeholder="Version">
         <input type="text" id="modelCreated" placeholder="Created Date" readonly>
-        <input type="checkbox" id="modelPublic"> Make Public
+        
+        <div style="margin: 10px 0;">
+            <label for="modelVisibility">Visibility:</label>
+            <select id="modelVisibility">
+                <option value="private">Private (Owner only)</option>
+                <option value="members">Members (All registered users)</option>
+                <option value="public">Public (Everyone)</option>
+            </select>
+        </div>
         
         <div id="fileDropZone" class="file-drop-zone">
             <div class="drop-zone-content">
@@ -573,7 +581,7 @@
             document.getElementById('modelCreated').value = '';
             document.getElementById('modelTaskType').value = 'detect';
             document.getElementById('modelZoomLevel').value = '19';
-            document.getElementById('modelPublic').checked = false;
+            document.getElementById('modelVisibility').value = 'private';
             
             // Clear validation and file display
             document.getElementById('fileValidation').innerHTML = '';
@@ -709,7 +717,7 @@
             const description = document.getElementById('modelDescription').value;
             const taskType = document.getElementById('modelTaskType').value;
             const zoomLevel = parseInt(document.getElementById('modelZoomLevel').value);
-            const isPublic = document.getElementById('modelPublic').checked;
+            const visibility = document.getElementById('modelVisibility').value;
             const files = document.getElementById('modelFiles').files;
 
             if (!name || files.length === 0) {
@@ -730,7 +738,7 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${authToken}`
                     },
-                    body: JSON.stringify({ name, description, task_type: taskType, zoom_level: zoomLevel, is_public: isPublic })
+                    body: JSON.stringify({ name, description, task_type: taskType, zoom_level: zoomLevel, visibility: visibility })
                 });
 
                 const model = await modelResponse.json();
@@ -819,13 +827,24 @@
                     modelCard.className = 'model-card';
                     
                     const isOwner = currentUser && model.owner === currentUser.username;
-                    const visibilityBadge = model.is_public ? 
-                        '<span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 12px;">Public</span>' : 
-                        '<span style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-size: 12px;">Private</span>';
+                    
+                    let visibilityBadge;
+                    switch(model.visibility) {
+                        case 'public':
+                            visibilityBadge = '<span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 12px;">Public</span>';
+                            break;
+                        case 'members':
+                            visibilityBadge = '<span style="background: #007bff; color: white; padding: 2px 6px; border-radius: 3px; font-size: 12px;">Members</span>';
+                            break;
+                        case 'private':
+                        default:
+                            visibilityBadge = '<span style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-size: 12px;">Private</span>';
+                            break;
+                    }
                     
                     const visibilityToggle = isOwner ? 
-                        `<button onclick="toggleModelVisibility(${model.id}, ${!model.is_public})" style="font-size: 12px; padding: 4px 8px; margin-left: 10px;">
-                            Make ${model.is_public ? 'Private' : 'Public'}
+                        `<button onclick="toggleModelVisibility(${model.id}, '${model.visibility}')" style="font-size: 12px; padding: 4px 8px; margin-left: 10px;">
+                            Change Visibility
                         </button>` : '';
                     
                     const deleteButton = isOwner ? 
@@ -894,7 +913,22 @@
             }
         }
 
-        async function toggleModelVisibility(modelId, isPublic) {
+        async function toggleModelVisibility(modelId, currentVisibility) {
+            // Show a selection dialog for the new visibility
+            const newVisibility = prompt(
+                `Current visibility: ${currentVisibility}\n\nChoose new visibility:\n- private (Owner only)\n- members (All registered users)\n- public (Everyone)\n\nEnter your choice:`,
+                currentVisibility
+            );
+            
+            if (!newVisibility || !['private', 'members', 'public'].includes(newVisibility.toLowerCase())) {
+                if (newVisibility !== null) { // Only show error if user didn't cancel
+                    alert('Invalid visibility. Please choose: private, members, or public');
+                }
+                return;
+            }
+            
+            const visibility = newVisibility.toLowerCase();
+            
             try {
                 const response = await fetch(`/api/models/${modelId}/visibility`, {
                     method: 'PATCH',
@@ -902,7 +936,7 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${authToken}`
                     },
-                    body: JSON.stringify({ is_public: isPublic })
+                    body: JSON.stringify({ visibility: visibility })
                 });
 
                 if (response.ok) {

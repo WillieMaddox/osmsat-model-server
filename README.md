@@ -8,7 +8,7 @@ A Node.js/Express API server for sharing TensorFlow.js models between OSMSAT use
 - **User Authentication**: JWT-based authentication with bcrypt password hashing
 - **Model Management**: Complete CRUD operations for TensorFlow.js models
 - **File Upload/Download**: Robust file handling with multer middleware
-- **Public/Private Sharing**: Model visibility controls with owner permissions
+- **Three-tier Visibility**: Model visibility controls (Private/Members/Public) with owner permissions
 - **Multi-format Support**: Handles detect/obb/pose model types with validation
 - **PostgreSQL Database**: Comprehensive schema with users, models, and model_versions tables
 - **Docker Containerization**: Full Docker Compose setup for easy deployment
@@ -26,7 +26,7 @@ A Node.js/Express API server for sharing TensorFlow.js models between OSMSAT use
 - **Responsive Design**: Clean, modern interface with drag-and-drop visual feedback
 - **Real-time Validation**: Instant feedback on file selection and form completion
 - **Model Cards**: Rich display of model information including version, creation date, and file size
-- **Visibility Controls**: Easy toggle between public/private model sharing
+- **Visibility Controls**: Three-level model sharing (Private/Members/Public)
 - **Download Management**: Efficient multi-file download with automatic file detection
 - **Authentication Flow**: Seamless login/register with persistent session management
 
@@ -65,11 +65,38 @@ A Node.js/Express API server for sharing TensorFlow.js models between OSMSAT use
 - `POST /api/models` - Create new model (authenticated)
 - `POST /api/models/:id/upload` - Upload model files with version and metadata (authenticated)
 - `GET /api/models/:id/download/:filename` - Download specific model file
-- `PATCH /api/models/:id/visibility` - Toggle model public/private visibility (authenticated)
+- `PATCH /api/models/:id/visibility` - Change model visibility level (authenticated)
 
 ### Users
 - `GET /api/users/me` - Get current user info (authenticated)
 - `GET /api/users/me/models` - Get user's models (authenticated)
+
+## Model Visibility Levels
+
+The OSMSAT Model Server provides three levels of model visibility:
+
+### Private (Default)
+- **Access**: Owner only
+- **Use Case**: Personal models, work-in-progress, sensitive content
+- **Visibility**: Hidden from all other users, including registered members
+
+### Members
+- **Access**: All registered users + owner
+- **Use Case**: Community sharing, educational content, beta testing
+- **Visibility**: Visible to authenticated users, hidden from anonymous visitors
+
+### Public
+- **Access**: Everyone (including anonymous visitors)
+- **Use Case**: Open-source models, public demonstrations, general sharing
+- **Visibility**: Accessible to anyone with the URL
+
+### Access Control Matrix
+
+| User Type | Private | Members | Public |
+|-----------|---------|---------|--------|
+| **Anonymous** | ❌ | ❌ | ✅ |
+| **Registered User** | Owner only | ✅ | ✅ |
+| **Model Owner** | ✅ | ✅ | ✅ |
 
 ## Model Structure
 
@@ -116,7 +143,7 @@ Visit `http://localhost:3001` to access the comprehensive web interface featurin
 - **Browse Models**: View all public models and your private models
 - **Upload Models**: Advanced drag-and-drop interface with folder support
 - **Download Models**: One-click download of all model files
-- **Visibility Control**: Toggle between public and private model sharing
+- **Visibility Control**: Three-level model sharing (Private/Members/Public)
 
 ### Upload Experience
 - **Drag & Drop**: Drop entire model folders directly onto the interface
@@ -129,7 +156,8 @@ Visit `http://localhost:3001` to access the comprehensive web interface featurin
 ### Model Display
 - **Rich Cards**: Detailed model information including version, size, and creation date
 - **Task Type Badges**: Visual indicators for detect/obb/pose model types
-- **Ownership Indicators**: Clear distinction between public/private models
+- **Visibility Badges**: Color-coded indicators for Private/Members/Public access levels
+- **Ownership Controls**: Model owners can change visibility and manage their models
 - **Download Integration**: Seamless file download with automatic detection
 
 ## Database Schema
@@ -148,7 +176,7 @@ Visit `http://localhost:3001` to access the comprehensive web interface featurin
 - `task_type` - Model type (detect/obb/pose)
 - `zoom_level` - Optimized zoom level (8-21)
 - `user_id` - Foreign key to users
-- `is_public` - Public/private visibility
+- `visibility` - Visibility level (private/members/public)
 - `created_at`, `updated_at` - Timestamps
 
 ### Model Versions Table
