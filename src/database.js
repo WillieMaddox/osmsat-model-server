@@ -51,7 +51,6 @@ const createTables = async () => {
 
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_models_task_type ON models(task_type);
-      CREATE INDEX IF NOT EXISTS idx_models_visibility ON models(visibility);
       CREATE INDEX IF NOT EXISTS idx_model_versions_active ON model_versions(is_active);
     `);
 
@@ -116,6 +115,12 @@ const createTables = async () => {
       } else {
         console.log('Migration: visibility column already exists, skipping is_public migration');
       }
+      
+      // Ensure visibility index exists after migration
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_models_visibility ON models(visibility);
+      `);
+      
     } catch (err) {
       console.error('Migration error for visibility column:', err);
     }
