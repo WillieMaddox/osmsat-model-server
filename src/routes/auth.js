@@ -62,12 +62,6 @@ router.post('/register', async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    if (isInviteTokenValid && inviteUserId) {
-      await pool.query(
-        'UPDATE users SET invite_token = NULL, invite_token_expires = NULL WHERE id = $1',
-        [inviteUserId]
-      );
-    }
 
     res.status(201).json({
       user: { id: user.id, username: user.username, email: user.email },
