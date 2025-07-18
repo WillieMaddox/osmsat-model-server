@@ -129,6 +129,7 @@
         <button id="showRegister">Register</button>
         <span id="userInfo" class="hidden">Welcome, <span id="username"></span>!</span>
         <button id="logout" class="hidden">Logout</button>
+        <button id="inviteUser" class="hidden">Invite User</button>
         
         <div id="loginForm" class="auth-form">
             <h3>Login</h3>
@@ -143,6 +144,19 @@
             <input type="email" id="registerEmail" placeholder="Email">
             <input type="password" id="registerPassword" placeholder="Password">
             <button onclick="register()">Register</button>
+        </div>
+        
+        <div id="invitePopup" class="auth-form">
+            <h3>Invite User</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span>Invite Link:</span>
+                <button onclick="closeInvitePopup()" style="width: auto; padding: 5px 10px;">Close</button>
+            </div>
+            <input type="text" id="inviteLink" readonly style="background: #f5f5f5;">
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button onclick="copyInviteLink()" style="width: auto; flex: 1;">Copy Link</button>
+                <button onclick="resetInviteToken()" style="width: auto; flex: 1; background: #ffc107; color: #000;">Reset Link</button>
+            </div>
         </div>
     </div>
 
@@ -262,6 +276,13 @@
                 };
             }
 
+            const inviteBtn = document.getElementById('inviteUser');
+            if (inviteBtn) {
+                inviteBtn.onclick = function() {
+                    showInvitePopup();
+                };
+            }
+
             setupFileDropZone();
             setupModelNameValidation();
             loadModels();
@@ -278,6 +299,7 @@
             document.getElementById('showRegister').classList.add('hidden');
             document.getElementById('userInfo').classList.remove('hidden');
             document.getElementById('logout').classList.remove('hidden');
+            document.getElementById('inviteUser').classList.remove('hidden');
             document.getElementById('uploadSection').classList.remove('hidden');
             if (currentUser) {
                 document.getElementById('username').textContent = currentUser.username;
@@ -288,6 +310,7 @@
             document.getElementById('showLogin').classList.remove('hidden');
             document.getElementById('userInfo').classList.add('hidden');
             document.getElementById('logout').classList.add('hidden');
+            document.getElementById('inviteUser').classList.add('hidden');
             document.getElementById('uploadSection').classList.add('hidden');
             updateRegistrationUI();
         }
@@ -631,12 +654,20 @@
             const username = document.getElementById('registerUsername').value;
             const email = document.getElementById('registerEmail').value;
             const password = document.getElementById('registerPassword').value;
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+
+            const requestBody = { username, email, password };
+            if (token) {
+                requestBody.token = token;
+            }
 
             try {
                 const response = await fetch('/api/auth/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, email, password })
+                    body: JSON.stringify(requestBody)
                 });
 
                 const data = await response.json();
@@ -646,12 +677,86 @@
                     localStorage.setItem('authToken', authToken);
                     showLoggedInState();
                     document.getElementById('registerForm').classList.remove('active');
+                    
+                    if (token) {
+                        const url = new URL(window.location);
+                        url.searchParams.delete('token');
+                        window.history.replaceState({}, document.title, url.pathname + url.search);
+                    }
+                    
                     loadModels();
                 } else {
                     alert('Registration failed: ' + data.error);
                 }
             } catch (err) {
                 alert('Registration failed: ' + err.message);
+            }
+        }
+
+        async function showInvitePopup() {
+            try {
+                const response = await fetch('/api/auth/generate-invite-token', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('inviteLink').value = data.url;
+                    document.getElementById('invitePopup').classList.add('active');
+                    document.getElementById('loginForm').classList.remove('active');
+                    document.getElementById('registerForm').classList.remove('active');
+                } else {
+                    const errorData = await response.json();
+                    alert('Failed to generate invite link: ' + errorData.error);
+                }
+            } catch (err) {
+                alert('Failed to generate invite link: ' + err.message);
+            }
+        }
+
+        function closeInvitePopup() {
+            document.getElementById('invitePopup').classList.remove('active');
+        }
+
+        async function resetInviteToken() {
+            try {
+                const response = await fetch('/api/auth/reset-invite-token', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('inviteLink').value = data.url;
+                    alert('Invite link has been reset!');
+                } else {
+                    const errorData = await response.json();
+                    alert('Failed to reset invite link: ' + errorData.error);
+                }
+            } catch (err) {
+                alert('Failed to reset invite link: ' + err.message);
+            }
+        }
+
+        function copyInviteLink() {
+            const inviteLink = document.getElementById('inviteLink');
+            inviteLink.select();
+            inviteLink.setSelectionRange(0, 99999);
+            
+            try {
+                document.execCommand('copy');
+                alert('Invite link copied to clipboard!');
+            } catch (err) {
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(inviteLink.value).then(() => {
+                        alert('Invite link copied to clipboard!');
+                    }).catch(() => {
+                        alert('Failed to copy invite link. Please copy manually.');
+                    });
+                } else {
+                    alert('Failed to copy invite link. Please copy manually.');
+                }
             }
         }
 
@@ -704,8 +809,19 @@
             const showRegisterBtn = document.getElementById('showRegister');
             const registerForm = document.getElementById('registerForm');
             
-            if (registrationEnabled) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+            
+            if (registrationEnabled || token) {
                 showRegisterBtn.classList.remove('hidden');
+                
+                if (token) {
+                    showRegisterBtn.textContent = 'Register with Invite';
+                    registerForm.classList.add('active');
+                    document.getElementById('loginForm').classList.remove('active');
+                } else {
+                    showRegisterBtn.textContent = 'Register';
+                }
             } else {
                 showRegisterBtn.classList.add('hidden');
                 registerForm.classList.remove('active');
