@@ -1,0 +1,1504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSMSAT Model Server - Dashboard Layout</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f8fafc;
+            color: #334155;
+            line-height: 1.6;
+        }
+        
+        .main-container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: 100vh;
+        }
+        
+        .sidebar {
+            background: white;
+            border-right: 1px solid #e2e8f0;
+            padding: 24px;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.04);
+        }
+        
+        .sidebar h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 32px;
+        }
+        
+        .nav-section {
+            margin-bottom: 24px;
+        }
+        
+        .nav-section h3 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .nav-item {
+            display: block;
+            padding: 12px 16px;
+            color: #475569;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 4px;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+        }
+        
+        .nav-item:hover {
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+        
+        .nav-item.active {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .main-content {
+            padding: 24px;
+            overflow-y: auto;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            padding: 24px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .header h2 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        
+        .user-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+        
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+        }
+        
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+        
+        .content-section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+        
+        .section-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .section-header h3 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+        
+        .upload-section {
+            padding: 24px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #374151;
+        }
+        
+        .form-control {
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .models-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .models-table th {
+            background: #f8fafc;
+            padding: 16px;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 1px solid #e2e8f0;
+            position: sticky;
+            top: 0;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .models-table th:hover {
+            background: #f1f5f9;
+        }
+        
+        .models-table th.sortable::after {
+            content: "↕";
+            margin-left: 8px;
+            color: #9ca3af;
+        }
+        
+        .models-table th.sort-asc::after {
+            content: "↑";
+            color: #3b82f6;
+        }
+        
+        .models-table th.sort-desc::after {
+            content: "↓";
+            color: #3b82f6;
+        }
+        
+        .models-table td {
+            padding: 16px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+        
+        .models-table tr:hover {
+            background: #f8fafc;
+        }
+        
+        .task-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+        
+        .task-detect { background: #dbeafe; color: #1d4ed8; }
+        .task-obb { background: #f3e8ff; color: #7c3aed; }
+        .task-pose { background: #dcfce7; color: #16a34a; }
+        
+        .visibility-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .visibility-public { background: #dcfce7; color: #16a34a; }
+        .visibility-members { background: #dbeafe; color: #1d4ed8; }
+        .visibility-private { background: #fef2f2; color: #dc2626; }
+        
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #059669;
+        }
+        
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+        }
+        
+        .hidden { display: none; }
+        .error { color: #d32f2f; }
+        .success { color: #388e3c; }
+        
+        .auth-form {
+            display: none;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .auth-form.active {
+            display: block;
+        }
+        
+        .file-drop-zone {
+            border: 2px dashed #3b82f6;
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px 0;
+        }
+        
+        .file-drop-zone:hover {
+            border-color: #2563eb;
+            background: #e3f2fd;
+        }
+        
+        .file-drop-zone.drag-over {
+            border-color: #28a745;
+            background: #d4edda;
+            border-style: solid;
+        }
+        
+        .selected-files {
+            margin-top: 15px;
+            text-align: left;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        
+        .file-item {
+            background: #e9ecef;
+            padding: 5px 10px;
+            margin: 2px 0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .file-validation {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .validation-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .validation-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        /* Modal styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1e293b;
+            margin: 0;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #64748b;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-close:hover {
+            color: #1e293b;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                display: none;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <aside class="sidebar">
+            <h1>OSMSAT</h1>
+            
+            <nav class="nav-section">
+                <h3>Navigation</h3>
+                <a href="#" class="nav-item active">Upload Model</a>
+            </nav>
+            
+            <nav class="nav-section">
+                <h3>Account</h3>
+                <button class="nav-item" id="inviteUser">Invite User</button>
+                <button class="nav-item" id="logout">Logout</button>
+            </nav>
+        </aside>
+        
+        <main class="main-content">
+            <div id="authSection">
+                <button id="showLogin" class="btn btn-secondary">Login</button>
+                <button id="showRegister" class="btn btn-secondary">Register</button>
+                <span id="userInfo" class="hidden">Welcome, <span id="username"></span>!</span>
+                
+                <div id="loginForm" class="auth-form">
+                    <h3>Login</h3>
+                    <input type="text" id="loginUsername" placeholder="Username" class="form-control">
+                    <input type="password" id="loginPassword" placeholder="Password" class="form-control">
+                    <button onclick="login()" class="btn btn-primary">Login</button>
+                </div>
+                
+                <div id="registerForm" class="auth-form">
+                    <h3>Register</h3>
+                    <input type="text" id="registerUsername" placeholder="Username" class="form-control">
+                    <input type="email" id="registerEmail" placeholder="Email" class="form-control">
+                    <input type="password" id="registerPassword" placeholder="Password" class="form-control">
+                    <button onclick="register()" class="btn btn-primary">Register</button>
+                </div>
+                
+            </div>
+            
+            <div class="header">
+                <div class="user-actions">
+                </div>
+            </div>
+            
+            <div id="uploadSection" class="content-section hidden">
+                <div class="section-header">
+                    <h3>Upload Model</h3>
+                    <button class="btn btn-secondary">Advanced Upload</button>
+                </div>
+                <div class="upload-section">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="modelName">Model Name</label>
+                            <input type="text" id="modelName" class="form-control" placeholder="Enter model name">
+                        </div>
+                        <div class="form-group">
+                            <label for="modelTaskType">Task Type</label>
+                            <select id="modelTaskType" class="form-control">
+                                <option value="detect">Detect</option>
+                                <option value="obb">OBB</option>
+                                <option value="pose">Pose</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="modelVisibility">Visibility</label>
+                            <select id="modelVisibility" class="form-control">
+                                <option value="private">Private (Owner only)</option>
+                                <option value="members">Members (All registered users)</option>
+                                <option value="public">Public (Everyone)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="modelZoomLevel">Zoom Level</label>
+                            <select id="modelZoomLevel" class="form-control">
+                                <option value="8">8</option>
+                                <option value="9">9</option>
+                                <option value="10">10</option>
+                                <option value="11">11</option>
+                                <option value="12">12</option>
+                                <option value="13">13</option>
+                                <option value="14">14</option>
+                                <option value="15">15</option>
+                                <option value="16">16</option>
+                                <option value="17">17</option>
+                                <option value="18">18</option>
+                                <option value="19" selected>19</option>
+                                <option value="20">20</option>
+                                <option value="21">21</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="modelDescription">Description</label>
+                        <textarea id="modelDescription" class="form-control" placeholder="Model Description"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="modelVersion">Version</label>
+                        <input type="text" id="modelVersion" class="form-control" placeholder="Version">
+                    </div>
+                    <div class="form-group">
+                        <label for="modelCreated">Created Date</label>
+                        <input type="text" id="modelCreated" class="form-control" placeholder="Created Date" readonly>
+                    </div>
+                    
+                    <div id="fileDropZone" class="file-drop-zone">
+                        <div class="drop-zone-content">
+                            <p><strong>Drag & Drop Model Folder Here</strong></p>
+                            <p>Or click to select folder</p>
+                            <div id="fileValidation" class="file-validation"></div>
+                            <div id="selectedFiles" class="selected-files"></div>
+                        </div>
+                        <input type="file" id="modelFiles" multiple webkitdirectory style="display: none;">
+                    </div>
+                    
+                    <button id="uploadModelBtn" onclick="uploadModel()" class="btn btn-primary" disabled>Upload Model</button>
+                </div>
+            </div>
+            
+            <div class="content-section">
+                <div class="section-header">
+                    <h3>Available Models</h3>
+                    <div class="user-actions">
+                        <input type="text" placeholder="Search models..." class="form-control" style="width: 200px;">
+                        <button class="btn btn-secondary">Filter</button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="models-table">
+                        <thead>
+                            <tr>
+                                <th class="sortable">Name</th>
+                                <th class="sortable">Owner</th>
+                                <th class="sortable">Task Type</th>
+                                <th class="sortable">Visibility</th>
+                                <th class="sortable">Zoom Level</th>
+                                <th class="sortable">Size</th>
+                                <th class="sortable">Version</th>
+                                <th class="sortable">Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modelsList">
+                            <!-- Models will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Invite User Modal -->
+    <div id="inviteModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Invite User</h3>
+                <button class="modal-close" onclick="closeInviteModal()">&times;</button>
+            </div>
+            <div class="form-group">
+                <label for="inviteLink">Invite Link:</label>
+                <input type="text" id="inviteLink" readonly class="form-control" style="background: #f5f5f5;">
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button onclick="copyInviteLink()" class="btn btn-primary">Copy Link</button>
+                <button onclick="resetInviteToken()" class="btn btn-secondary">Reset Link</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let authToken = localStorage.getItem('authToken');
+        let currentUser = null;
+        let registrationEnabled = true;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, setting up event handlers');
+            
+            fetchRegistrationStatus().then(() => {
+                if (authToken) {
+                    fetchCurrentUser().then(() => {
+                        showLoggedInState();
+                    });
+                }
+            });
+
+            const showLoginBtn = document.getElementById('showLogin');
+            const showRegisterBtn = document.getElementById('showRegister');
+            const logoutBtn = document.getElementById('logout');
+            
+            console.log('Found elements:', showLoginBtn, showRegisterBtn, logoutBtn);
+
+            if (showLoginBtn) {
+                showLoginBtn.onclick = function() {
+                    console.log('Login button clicked');
+                    document.getElementById('loginForm').classList.add('active');
+                    document.getElementById('registerForm').classList.remove('active');
+                };
+            }
+
+            if (showRegisterBtn) {
+                showRegisterBtn.onclick = function() {
+                    console.log('Register button clicked');
+                    if (!registrationEnabled) {
+                        alert('Registration is currently disabled');
+                        return;
+                    }
+                    document.getElementById('registerForm').classList.add('active');
+                    document.getElementById('loginForm').classList.remove('active');
+                };
+            }
+
+            if (logoutBtn) {
+                logoutBtn.onclick = function() {
+                    console.log('Logout button clicked');
+                    localStorage.removeItem('authToken');
+                    authToken = null;
+                    currentUser = null;
+                    showLoggedOutState();
+                    loadModels();
+                };
+            }
+
+            const inviteBtn = document.getElementById('inviteUser');
+            if (inviteBtn) {
+                inviteBtn.onclick = function() {
+                    showInvitePopup();
+                };
+            }
+
+
+            setupFileDropZone();
+            setupModelNameValidation();
+            setupModalCloseOnOutsideClick();
+            loadModels();
+        });
+
+        function setupModelNameValidation() {
+            const modelNameInput = document.getElementById('modelName');
+            if (modelNameInput) {
+                modelNameInput.addEventListener('input', updateUploadButtonState);
+                modelNameInput.addEventListener('blur', updateUploadButtonState);
+            }
+        }
+
+        function showLoggedInState() {
+            const showLogin = document.getElementById('showLogin');
+            const showRegister = document.getElementById('showRegister');
+            const userInfo = document.getElementById('userInfo');
+            const logout = document.getElementById('logout');
+            const inviteUser = document.getElementById('inviteUser');
+            const uploadSection = document.getElementById('uploadSection');
+            const username = document.getElementById('username');
+
+            if (showLogin) showLogin.classList.add('hidden');
+            if (showRegister) showRegister.classList.add('hidden');
+            if (userInfo) userInfo.classList.remove('hidden');
+            if (logout) logout.classList.remove('hidden');
+            if (inviteUser) inviteUser.classList.remove('hidden');
+            if (uploadSection) uploadSection.classList.remove('hidden');
+            if (currentUser && username) {
+                username.textContent = currentUser.username;
+            }
+        }
+
+        function showLoggedOutState() {
+            const showLogin = document.getElementById('showLogin');
+            const showRegister = document.getElementById('showRegister');
+            const userInfo = document.getElementById('userInfo');
+            const logout = document.getElementById('logout');
+            const inviteUser = document.getElementById('inviteUser');
+            const uploadSection = document.getElementById('uploadSection');
+
+            if (showLogin) showLogin.classList.remove('hidden');
+            if (userInfo) userInfo.classList.add('hidden');
+            if (logout) logout.classList.add('hidden');
+            if (inviteUser) inviteUser.classList.add('hidden');
+            if (uploadSection) uploadSection.classList.add('hidden');
+            updateRegistrationUI();
+        }
+
+        function setupFileDropZone() {
+            const dropZone = document.getElementById('fileDropZone');
+            const fileInput = document.getElementById('modelFiles');
+            const selectedFilesDiv = document.getElementById('selectedFiles');
+
+            if (!dropZone || !fileInput || !selectedFilesDiv) return;
+
+            // Click to browse files
+            dropZone.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            // File input change event
+            fileInput.addEventListener('change', (e) => {
+                handleFiles(e.target.files);
+            });
+
+            // Drag and drop events
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('drag-over');
+            });
+
+            dropZone.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-over');
+            });
+
+            dropZone.addEventListener('drop', async (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-over');
+                
+                const items = e.dataTransfer.items;
+                
+                if (items) {
+                    const files = await getAllFilesFromDrop(items);
+                    handleFiles(files);
+                } else {
+                    const files = e.dataTransfer.files;
+                    handleFiles(files);
+                }
+            });
+
+            async function handleFiles(files) {
+                const fileArray = Array.from(files);
+                
+                const dt = new DataTransfer();
+                fileArray.forEach(file => dt.items.add(file));
+                fileInput.files = dt.files;
+
+                resetFormToDefaults();
+                autoPopulateModelName(fileArray);
+                await validateAndPopulateFiles(fileArray);
+                displaySelectedFiles(fileArray);
+            }
+
+            function displaySelectedFiles(files) {
+                selectedFilesDiv.innerHTML = '';
+                
+                if (files.length === 0) {
+                    selectedFilesDiv.innerHTML = '<p>No files selected</p>';
+                    return;
+                }
+
+                const fileList = document.createElement('div');
+                fileList.innerHTML = `<strong>${files.length} files selected:</strong>`;
+                
+                files.forEach(file => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-item';
+                    fileItem.textContent = `${file.name} (${formatFileSize(file.size)})`;
+                    fileList.appendChild(fileItem);
+                });
+
+                selectedFilesDiv.appendChild(fileList);
+            }
+
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            function autoPopulateModelName(files) {
+                if (files.length === 0) return;
+                
+                const firstFile = files[0];
+                let folderName = '';
+                
+                if (firstFile.webkitRelativePath) {
+                    folderName = firstFile.webkitRelativePath.split('/')[0];
+                } else {
+                    const names = files.map(f => f.name);
+                    const commonPrefix = getCommonPrefix(names);
+                    folderName = commonPrefix.trim();
+                }
+                
+                if (folderName) {
+                    const modelNameInput = document.getElementById('modelName');
+                    if (modelNameInput) {
+                        modelNameInput.value = folderName;
+                    }
+                }
+            }
+
+            function getCommonPrefix(strings) {
+                if (strings.length === 0) return '';
+                if (strings.length === 1) return strings[0].split('.')[0];
+                
+                let prefix = strings[0];
+                for (let i = 1; i < strings.length; i++) {
+                    while (!strings[i].startsWith(prefix)) {
+                        prefix = prefix.substring(0, prefix.length - 1);
+                        if (prefix === '') return '';
+                    }
+                }
+                return prefix;
+            }
+
+            async function validateAndPopulateFiles(files) {
+                const validationDiv = document.getElementById('fileValidation');
+                if (!validationDiv) return;
+                
+                const hasYaml = files.some(f => f.name.toLowerCase().endsWith('.yaml') || f.name.toLowerCase().endsWith('.yml'));
+                const hasJson = files.some(f => f.name.toLowerCase().endsWith('.json'));
+                const hasBin = files.some(f => f.name.toLowerCase().endsWith('.bin'));
+                
+                const missing = [];
+                if (!hasYaml) missing.push('YAML metadata file');
+                if (!hasJson) missing.push('JSON model file');
+                if (!hasBin) missing.push('BIN weight file(s)');
+                
+                if (missing.length > 0) {
+                    validationDiv.innerHTML = `<div class="validation-error">Missing required files: ${missing.join(', ')}</div>`;
+                    updateUploadButtonState();
+                    return;
+                }
+                
+                validationDiv.innerHTML = '<div class="validation-success">✓ All required files found</div>';
+                
+                const yamlFile = files.find(f => f.name.toLowerCase().endsWith('.yaml') || f.name.toLowerCase().endsWith('.yml'));
+                if (yamlFile) {
+                    try {
+                        const yamlText = await readFileAsText(yamlFile);
+                        parseAndPopulateYaml(yamlText);
+                    } catch (err) {
+                        console.log('Could not parse YAML file:', err);
+                    }
+                }
+                
+                updateUploadButtonState();
+            }
+
+            function readFileAsText(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = e => resolve(e.target.result);
+                    reader.onerror = reject;
+                    reader.readAsText(file);
+                });
+            }
+
+            function parseAndPopulateYaml(yamlText) {
+                try {
+                    const lines = yamlText.split('\n');
+                    const metadata = {};
+                    
+                    lines.forEach(line => {
+                        const colonIndex = line.indexOf(':');
+                        if (colonIndex > 0) {
+                            const key = line.substring(0, colonIndex).trim();
+                            const value = line.substring(colonIndex + 1).trim().replace(/['"]/g, '');
+                            metadata[key] = value;
+                        }
+                    });
+                    
+                    const descriptionInput = document.getElementById('modelDescription');
+                    const createdInput = document.getElementById('modelCreated');
+                    const versionInput = document.getElementById('modelVersion');
+                    const taskSelect = document.getElementById('modelTaskType');
+                    
+                    if (metadata.description && descriptionInput && !descriptionInput.value) {
+                        descriptionInput.value = metadata.description;
+                    }
+                    
+                    if (metadata.date && createdInput && !createdInput.value) {
+                        const dateValue = metadata.date.includes('T') ? 
+                            new Date(metadata.date).toLocaleString() : 
+                            metadata.date;
+                        createdInput.value = dateValue;
+                    }
+                    
+                    if (metadata.version && versionInput && !versionInput.value) {
+                        versionInput.value = metadata.version;
+                    }
+                    
+                    if (metadata.task && taskSelect) {
+                        const taskValue = metadata.task.toLowerCase();
+                        if (['detect', 'obb', 'pose'].includes(taskValue)) {
+                            taskSelect.value = taskValue;
+                        }
+                    }
+                    
+                } catch (err) {
+                    console.log('Error parsing YAML:', err);
+                }
+            }
+        }
+
+        async function getAllFilesFromDrop(items) {
+            const files = [];
+            
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                if (item.kind === 'file') {
+                    const entry = item.webkitGetAsEntry();
+                    if (entry) {
+                        if (entry.isDirectory) {
+                            const dirFiles = await readDirectory(entry);
+                            files.push(...dirFiles);
+                        } else {
+                            const file = item.getAsFile();
+                            if (file) files.push(file);
+                        }
+                    }
+                }
+            }
+            
+            return files;
+        }
+
+        async function readDirectory(dirEntry) {
+            const files = [];
+            
+            return new Promise((resolve) => {
+                const dirReader = dirEntry.createReader();
+                
+                function readEntries() {
+                    dirReader.readEntries(async (entries) => {
+                        if (entries.length === 0) {
+                            resolve(files);
+                            return;
+                        }
+                        
+                        for (const entry of entries) {
+                            if (entry.isFile) {
+                                const file = await new Promise((resolve) => {
+                                    entry.file(resolve);
+                                });
+                                Object.defineProperty(file, 'webkitRelativePath', {
+                                    value: entry.fullPath.substring(1),
+                                    writable: false
+                                });
+                                files.push(file);
+                            } else if (entry.isDirectory) {
+                                const subFiles = await readDirectory(entry);
+                                files.push(...subFiles);
+                            }
+                        }
+                        
+                        readEntries();
+                    });
+                }
+                
+                readEntries();
+            });
+        }
+
+        function resetFormToDefaults() {
+            const modelName = document.getElementById('modelName');
+            const modelDescription = document.getElementById('modelDescription');
+            const modelVersion = document.getElementById('modelVersion');
+            const modelCreated = document.getElementById('modelCreated');
+            const modelTaskType = document.getElementById('modelTaskType');
+            const modelZoomLevel = document.getElementById('modelZoomLevel');
+            const modelVisibility = document.getElementById('modelVisibility');
+            const fileValidation = document.getElementById('fileValidation');
+            const selectedFiles = document.getElementById('selectedFiles');
+            const uploadBtn = document.getElementById('uploadModelBtn');
+
+            if (modelName) modelName.value = '';
+            if (modelDescription) modelDescription.value = '';
+            if (modelVersion) modelVersion.value = '';
+            if (modelCreated) modelCreated.value = '';
+            if (modelTaskType) modelTaskType.value = 'detect';
+            if (modelZoomLevel) modelZoomLevel.value = '19';
+            if (modelVisibility) modelVisibility.value = 'private';
+            if (fileValidation) fileValidation.innerHTML = '';
+            if (selectedFiles) selectedFiles.innerHTML = '';
+            if (uploadBtn) uploadBtn.disabled = true;
+        }
+
+        function updateUploadButtonState() {
+            const modelName = document.getElementById('modelName');
+            const fileValidation = document.getElementById('fileValidation');
+            const uploadBtn = document.getElementById('uploadModelBtn');
+            
+            if (!modelName || !fileValidation || !uploadBtn) return;
+            
+            const modelNameValue = modelName.value.trim();
+            const hasValidFiles = fileValidation.innerHTML.includes('validation-success');
+            
+            uploadBtn.disabled = !(modelNameValue && hasValidFiles);
+        }
+
+        async function login() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    authToken = data.token;
+                    currentUser = data.user;
+                    localStorage.setItem('authToken', authToken);
+                    showLoggedInState();
+                    document.getElementById('loginForm').classList.remove('active');
+                    loadModels();
+                } else {
+                    alert('Login failed: ' + data.error);
+                }
+            } catch (err) {
+                alert('Login failed: ' + err.message);
+            }
+        }
+
+        async function register() {
+            const username = document.getElementById('registerUsername').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+
+            const requestBody = { username, email, password };
+            if (token) {
+                requestBody.token = token;
+            }
+
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody)
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    authToken = data.token;
+                    currentUser = data.user;
+                    localStorage.setItem('authToken', authToken);
+                    showLoggedInState();
+                    document.getElementById('registerForm').classList.remove('active');
+                    
+                    if (token) {
+                        const url = new URL(window.location);
+                        url.searchParams.delete('token');
+                        window.history.replaceState({}, document.title, url.pathname + url.search);
+                    }
+                    
+                    loadModels();
+                } else {
+                    alert('Registration failed: ' + data.error);
+                }
+            } catch (err) {
+                alert('Registration failed: ' + err.message);
+            }
+        }
+
+        async function showInvitePopup() {
+            try {
+                const response = await fetch('/api/auth/generate-invite-token', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const inviteLink = document.getElementById('inviteLink');
+                    if (inviteLink) {
+                        inviteLink.value = data.url;
+                    }
+                    document.getElementById('inviteModal').classList.add('active');
+                } else {
+                    const errorData = await response.json();
+                    alert('Failed to generate invite link: ' + errorData.error);
+                }
+            } catch (err) {
+                alert('Failed to generate invite link: ' + err.message);
+            }
+        }
+
+        function closeInviteModal() {
+            document.getElementById('inviteModal').classList.remove('active');
+        }
+        
+        function setupModalCloseOnOutsideClick() {
+            const modal = document.getElementById('inviteModal');
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        closeInviteModal();
+                    }
+                });
+            }
+        }
+
+        async function resetInviteToken() {
+            try {
+                const response = await fetch('/api/auth/reset-invite-token', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const inviteLink = document.getElementById('inviteLink');
+                    if (inviteLink) {
+                        inviteLink.value = data.url;
+                    }
+                } else {
+                    const errorData = await response.json();
+                    alert('Failed to reset invite link: ' + errorData.error);
+                }
+            } catch (err) {
+                alert('Failed to reset invite link: ' + err.message);
+            }
+        }
+
+        function copyInviteLink() {
+            const inviteLink = document.getElementById('inviteLink');
+            if (!inviteLink) return;
+            
+            inviteLink.select();
+            inviteLink.setSelectionRange(0, 99999);
+            
+            try {
+                document.execCommand('copy');
+            } catch (err) {
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(inviteLink.value).then(() => {
+                    }).catch(() => {
+                        alert('Failed to copy invite link. Please copy manually.');
+                    });
+                } else {
+                    alert('Failed to copy invite link. Please copy manually.');
+                }
+            }
+        }
+
+        async function fetchCurrentUser() {
+            try {
+                const response = await fetch('/api/users/me', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                if (response.ok) {
+                    currentUser = await response.json();
+                    const username = document.getElementById('username');
+                    if (currentUser && currentUser.username && username) {
+                        username.textContent = currentUser.username;
+                    }
+                } else {
+                    localStorage.removeItem('authToken');
+                    authToken = null;
+                    currentUser = null;
+                    showLoggedOutState();
+                }
+            } catch (err) {
+                console.error('Failed to fetch current user:', err);
+                localStorage.removeItem('authToken');
+                authToken = null;
+                currentUser = null;
+                showLoggedOutState();
+            }
+        }
+
+        async function fetchRegistrationStatus() {
+            try {
+                const response = await fetch('/api/auth/registration-enabled');
+                if (response.ok) {
+                    const data = await response.json();
+                    registrationEnabled = data.enabled;
+                    updateRegistrationUI();
+                } else {
+                    console.error('Failed to fetch registration status');
+                    registrationEnabled = true;
+                }
+            } catch (err) {
+                console.error('Failed to fetch registration status:', err);
+                registrationEnabled = true;
+            }
+        }
+
+        function updateRegistrationUI() {
+            const showRegisterBtn = document.getElementById('showRegister');
+            const registerForm = document.getElementById('registerForm');
+            
+            if (!showRegisterBtn || !registerForm) return;
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+            
+            if (registrationEnabled || token) {
+                showRegisterBtn.classList.remove('hidden');
+                
+                if (token) {
+                    showRegisterBtn.textContent = 'Register with Invite';
+                    registerForm.classList.add('active');
+                    document.getElementById('loginForm').classList.remove('active');
+                } else {
+                    showRegisterBtn.textContent = 'Register';
+                }
+            } else {
+                showRegisterBtn.classList.add('hidden');
+                registerForm.classList.remove('active');
+            }
+        }
+
+        async function uploadModel() {
+            const name = document.getElementById('modelName').value;
+            const description = document.getElementById('modelDescription').value;
+            const taskType = document.getElementById('modelTaskType').value;
+            const zoomLevel = parseInt(document.getElementById('modelZoomLevel').value);
+            const visibility = document.getElementById('modelVisibility').value;
+            const files = document.getElementById('modelFiles').files;
+
+            if (!name || files.length === 0) {
+                alert('Please provide a name and select files');
+                return;
+            }
+
+            const uploadBtn = document.getElementById('uploadModelBtn');
+            if (!uploadBtn) return;
+            
+            const originalText = uploadBtn.textContent;
+            
+            try {
+                uploadBtn.textContent = 'Creating model...';
+                uploadBtn.disabled = true;
+
+                const modelResponse = await fetch('/api/models', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ name, description, task_type: taskType, zoom_level: zoomLevel, visibility: visibility })
+                });
+
+                const model = await modelResponse.json();
+                if (!modelResponse.ok) {
+                    throw new Error(model.error);
+                }
+
+                uploadBtn.textContent = `Uploading ${files.length} files...`;
+
+                const formData = new FormData();
+                
+                const version = document.getElementById('modelVersion').value || '1.0.0';
+                formData.append('version', version);
+                
+                const createdDate = document.getElementById('modelCreated').value;
+                if (createdDate) {
+                    formData.append('created_date', createdDate);
+                }
+                
+                for (const file of files) {
+                    formData.append('files', file);
+                }
+
+                const uploadResponse = await fetch(`/api/models/${model.id}/upload`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${authToken}` },
+                    body: formData
+                });
+
+                const uploadResult = await uploadResponse.json();
+                if (uploadResponse.ok) {
+                    resetFormToDefaults();
+                    
+                    const fileInput = document.getElementById('modelFiles');
+                    if (fileInput) {
+                        const newFileInput = fileInput.cloneNode(true);
+                        fileInput.parentNode.replaceChild(newFileInput, fileInput);
+                    }
+                    
+                    setupFileDropZone();
+                    loadModels();
+                } else {
+                    throw new Error(uploadResult.error);
+                }
+            } catch (err) {
+                alert('Upload failed: ' + err.message);
+                console.error('Upload error:', err);
+            } finally {
+                uploadBtn.textContent = originalText;
+                uploadBtn.disabled = false;
+            }
+        }
+
+        async function loadModels() {
+            try {
+                const headers = {};
+                if (authToken) {
+                    headers['Authorization'] = `Bearer ${authToken}`;
+                }
+
+                const response = await fetch('/api/models', { headers });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const models = await response.json();
+                const modelsList = document.getElementById('modelsList');
+                
+                if (!modelsList) return;
+                
+                modelsList.innerHTML = '';
+
+                if (!Array.isArray(models)) {
+                    console.error('Expected array of models, got:', models);
+                    modelsList.innerHTML = '<tr><td colspan="9">Error loading models: Invalid response format</td></tr>';
+                    return;
+                }
+
+                models.forEach(model => {
+                    const row = document.createElement('tr');
+                    
+                    const isOwner = currentUser && model.owner === currentUser.username;
+                    
+                    let visibilityBadge;
+                    switch(model.visibility) {
+                        case 'public':
+                            visibilityBadge = '<span class="visibility-badge visibility-public">Public</span>';
+                            break;
+                        case 'members':
+                            visibilityBadge = '<span class="visibility-badge visibility-members">Members</span>';
+                            break;
+                        case 'private':
+                        default:
+                            visibilityBadge = '<span class="visibility-badge visibility-private">Private</span>';
+                            break;
+                    }
+                    
+                    const visibilityToggle = isOwner ? 
+                        `<select onchange="updateModelVisibility(${model.id}, this.value)" style="font-size: 12px; padding: 4px 8px; margin-left: 10px;">
+                            <option value="private" ${model.visibility === 'private' ? 'selected' : ''}>Private</option>
+                            <option value="members" ${model.visibility === 'members' ? 'selected' : ''}>Members</option>
+                            <option value="public" ${model.visibility === 'public' ? 'selected' : ''}>Public</option>
+                        </select>` : '';
+                    
+                    const deleteButton = isOwner ? 
+                        `<button onclick="deleteModel(${model.id})" class="btn btn-danger btn-sm">Delete</button>` : '';
+                    
+                    row.innerHTML = `
+                        <td><strong>${model.name}</strong></td>
+                        <td>${model.owner} ${visibilityToggle}</td>
+                        <td><span class="task-badge task-${model.task_type}">${model.task_type}</span></td>
+                        <td>${visibilityBadge}</td>
+                        <td>${model.zoom_level || 19}</td>
+                        <td>${model.file_size ? Math.round(model.file_size / 1024 / 1024 * 100) / 100 + ' MB' : 'Unknown'}</td>
+                        <td>${model.version || 'No version'}</td>
+                        <td>${model.metadata && model.metadata.form_created_date ? model.metadata.form_created_date : (model.metadata && model.metadata.date ? new Date(model.metadata.date).toLocaleString() : new Date(model.created_at).toLocaleString())}</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button onclick="downloadModel(${model.id})" class="btn btn-success btn-sm">Download</button>
+                                ${deleteButton}
+                            </div>
+                        </td>
+                    `;
+                    modelsList.appendChild(row);
+                });
+            } catch (err) {
+                console.error('Failed to load models:', err);
+            }
+        }
+
+        async function downloadModel(modelId) {
+            try {
+                const response = await fetch(`/api/models/${modelId}/files`);
+                if (!response.ok) {
+                    throw new Error('Failed to get file list');
+                }
+                
+                const files = await response.json();
+                
+                if (files.length === 0) {
+                    alert('No files available for download. Model may not have been uploaded yet.');
+                    return;
+                }
+
+                let downloadedCount = 0;
+                const downloadPromises = files.map(async (filename) => {
+                    try {
+                        const fileResponse = await fetch(`/api/models/${modelId}/download/${filename}`);
+                        if (fileResponse.ok) {
+                            const blob = await fileResponse.blob();
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = filename;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                            downloadedCount++;
+                        } else {
+                            console.error(`Error downloading ${filename}: ${fileResponse.status}`);
+                        }
+                    } catch (err) {
+                        console.log(`Error downloading ${filename}: ${err.message}`);
+                    }
+                });
+                
+                await Promise.all(downloadPromises);
+                console.log(`Downloaded ${downloadedCount} files`);
+            } catch (err) {
+                alert('Download failed: ' + err.message);
+            }
+        }
+
+        async function updateModelVisibility(modelId, newVisibility) {
+            try {
+                const response = await fetch(`/api/models/${modelId}/visibility`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ visibility: newVisibility })
+                });
+
+                if (response.ok) {
+                    loadModels();
+                } else {
+                    const error = await response.json();
+                    alert('Failed to update visibility: ' + error.error);
+                }
+            } catch (err) {
+                alert('Failed to update visibility: ' + err.message);
+            }
+        }
+
+        async function deleteModel(modelId) {
+            if (!confirm('Are you sure you want to delete this model? This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/models/${modelId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    loadModels();
+                } else {
+                    const error = await response.json();
+                    alert('Failed to delete model: ' + error.error);
+                }
+            } catch (err) {
+                alert('Failed to delete model: ' + err.message);
+            }
+        }
+    </script>
+</body>
+</html>

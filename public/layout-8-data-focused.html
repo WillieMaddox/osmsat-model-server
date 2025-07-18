@@ -1,0 +1,1581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSMSAT Model Server - Data-Focused Layout</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'JetBrains Mono', 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            background: #0d1117;
+            color: #c9d1d9;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #f0f6fc;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .header h1::before {
+            content: "$ ";
+            color: #58a6ff;
+        }
+        
+        .header-info {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            font-size: 13px;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .status-indicator::before {
+            content: "●";
+            color: #3fb950;
+        }
+        
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #58a6ff;
+            margin-bottom: 4px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #8b949e;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 20px;
+        }
+        
+        .sidebar {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 20px;
+            height: fit-content;
+        }
+        
+        .sidebar-section {
+            margin-bottom: 24px;
+        }
+        
+        .sidebar-section:last-child {
+            margin-bottom: 0;
+        }
+        
+        .sidebar-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #f0f6fc;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            color: #8b949e;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #c9d1d9;
+            font-size: 13px;
+            font-family: 'JetBrains Mono', monospace;
+            transition: border-color 0.2s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #58a6ff;
+            box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2);
+        }
+        
+        .form-control::placeholder {
+            color: #6e7681;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+            font-family: 'JetBrains Mono', monospace;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: #238636;
+            color: #ffffff;
+            border-color: #238636;
+        }
+        
+        .btn-primary:hover {
+            background: #2ea043;
+            border-color: #2ea043;
+        }
+        
+        .btn-secondary {
+            background: #21262d;
+            color: #c9d1d9;
+            border-color: #30363d;
+        }
+        
+        .btn-secondary:hover {
+            background: #30363d;
+            border-color: #444c56;
+        }
+        
+        .btn-danger {
+            background: #da3633;
+            color: #ffffff;
+            border-color: #da3633;
+        }
+        
+        .btn-danger:hover {
+            background: #f85149;
+            border-color: #f85149;
+        }
+        
+        .btn-warning {
+            background: #fb8500;
+            color: #ffffff;
+            border-color: #fb8500;
+        }
+        
+        .btn-warning:hover {
+            background: #ffb70a;
+            border-color: #ffb70a;
+        }
+        
+        .upload-zone {
+            border: 2px dashed #30363d;
+            border-radius: 8px;
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s;
+            background: #0d1117;
+            margin-bottom: 16px;
+        }
+        
+        .upload-zone:hover, .upload-zone.drag-over {
+            border-color: #58a6ff;
+        }
+        
+        .upload-zone .icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+            display: block;
+            color: #6e7681;
+        }
+        
+        .upload-zone h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #c9d1d9;
+        }
+        
+        .upload-zone p {
+            font-size: 12px;
+            color: #8b949e;
+        }
+        
+        .models-section {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .models-header {
+            background: #21262d;
+            border-bottom: 1px solid #30363d;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .models-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #f0f6fc;
+        }
+        
+        .models-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        .search-box {
+            position: relative;
+        }
+        
+        .search-box input {
+            width: 200px;
+            padding: 6px 12px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #c9d1d9;
+            font-size: 12px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .search-box input:focus {
+            outline: none;
+            border-color: #58a6ff;
+        }
+        
+        .filter-select {
+            padding: 6px 12px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #c9d1d9;
+            font-size: 12px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .models-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        
+        .models-table th {
+            background: #0d1117;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: #8b949e;
+            border-bottom: 1px solid #30363d;
+            position: sticky;
+            top: 0;
+            cursor: pointer;
+            user-select: none;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 11px;
+        }
+        
+        .models-table th:hover {
+            background: #161b22;
+        }
+        
+        .models-table th.sortable::after {
+            content: "↕";
+            margin-left: 8px;
+            color: #6e7681;
+        }
+        
+        .models-table th.sort-asc::after {
+            content: "↑";
+            color: #58a6ff;
+        }
+        
+        .models-table th.sort-desc::after {
+            content: "↓";
+            color: #58a6ff;
+        }
+        
+        .models-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #21262d;
+            vertical-align: middle;
+            color: #c9d1d9;
+        }
+        
+        .models-table tbody tr:hover {
+            background: #21262d;
+        }
+        
+        .models-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .model-name {
+            font-weight: 600;
+            color: #f0f6fc;
+            font-size: 14px;
+        }
+        
+        .model-hash {
+            font-size: 11px;
+            color: #6e7681;
+            font-family: 'JetBrains Mono', monospace;
+            margin-top: 2px;
+        }
+        
+        .owner-cell {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .owner-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #30363d;
+            color: #c9d1d9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 10px;
+        }
+        
+        .owner-name {
+            font-size: 12px;
+            color: #58a6ff;
+        }
+        
+        .task-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .task-detect { 
+            background: #1f2937;
+            color: #60a5fa;
+            border: 1px solid #374151;
+        }
+        
+        .task-obb { 
+            background: #2d1b69;
+            color: #c084fc;
+            border: 1px solid #4c1d95;
+        }
+        
+        .task-pose { 
+            background: #1f2937;
+            color: #34d399;
+            border: 1px solid #065f46;
+        }
+        
+        .visibility-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .visibility-public { 
+            background: #044317;
+            color: #3fb950;
+        }
+        
+        .visibility-members { 
+            background: #0c2d6b;
+            color: #58a6ff;
+        }
+        
+        .visibility-private { 
+            background: #5a1e1e;
+            color: #f85149;
+        }
+        
+        .file-size {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: #8b949e;
+        }
+        
+        .version-info {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: #f0f6fc;
+            background: #21262d;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        
+        .date-info {
+            font-size: 12px;
+            color: #8b949e;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 4px;
+        }
+        
+        .btn-xs {
+            padding: 4px 8px;
+            font-size: 10px;
+            border-radius: 4px;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 4px;
+            margin-top: 16px;
+            padding: 16px;
+            background: #0d1117;
+            border-top: 1px solid #30363d;
+        }
+        
+        .pagination button {
+            padding: 6px 10px;
+            border: 1px solid #30363d;
+            border-radius: 4px;
+            background: #21262d;
+            color: #c9d1d9;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 12px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .pagination button:hover {
+            background: #30363d;
+            border-color: #444c56;
+        }
+        
+        .pagination button.active {
+            background: #238636;
+            color: #ffffff;
+            border-color: #238636;
+        }
+        
+        .command-hint {
+            font-size: 11px;
+            color: #6e7681;
+            margin-top: 8px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .command-hint::before {
+            content: "# ";
+            color: #8b949e;
+        }
+        
+        .system-info {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .system-info h4 {
+            font-size: 12px;
+            color: #f0f6fc;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .system-info ul {
+            list-style: none;
+            font-size: 11px;
+            color: #8b949e;
+        }
+        
+        .system-info li {
+            margin-bottom: 4px;
+        }
+        
+        .system-info li::before {
+            content: "• ";
+            color: #6e7681;
+        }
+        
+        .auth-section {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .auth-forms {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .auth-form {
+            flex: 1;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .auth-form h3 {
+            margin-bottom: 16px;
+            color: #f0f6fc;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #21262d;
+            border-radius: 4px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #58a6ff;
+            transition: width 0.3s;
+        }
+        
+        .upload-progress {
+            margin-top: 16px;
+            display: none;
+        }
+        
+        .upload-progress.active {
+            display: block;
+        }
+        
+        .upload-file-list {
+            margin-top: 16px;
+        }
+        
+        .upload-file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: #21262d;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+        
+        .upload-file-item .file-name {
+            color: #c9d1d9;
+            font-weight: 500;
+        }
+        
+        .upload-file-item .file-size {
+            color: #8b949e;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #30363d;
+            color: #c9d1d9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .user-name {
+            color: #f0f6fc;
+            font-weight: 500;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                order: 2;
+            }
+            
+            .models-section {
+                order: 1;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .models-controls {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .search-box input {
+                width: 100%;
+            }
+            
+            .quick-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .models-table {
+                font-size: 11px;
+            }
+            
+            .models-table th,
+            .models-table td {
+                padding: 8px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>osmsat-model-server</h1>
+            <div class="header-info">
+                <div class="status-indicator">Connected</div>
+                <div id="currentUserInfo" class="user-info hidden">
+                    <div class="user-avatar" id="userAvatar"></div>
+                    <div class="user-name" id="userName"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Auth Section -->
+        <div id="authSection" class="auth-section">
+            <div class="auth-forms">
+                <div class="auth-form">
+                    <h3>Login</h3>
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label for="loginUsername">Username</label>
+                            <input type="text" id="loginUsername" class="form-control" placeholder="username" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="loginPassword">Password</label>
+                            <input type="password" id="loginPassword" class="form-control" placeholder="password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+                    </form>
+                </div>
+                
+                <div class="auth-form">
+                    <h3>Register</h3>
+                    <form id="registerForm">
+                        <div class="form-group">
+                            <label for="registerUsername">Username</label>
+                            <input type="text" id="registerUsername" class="form-control" placeholder="username" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="registerEmail">Email</label>
+                            <input type="email" id="registerEmail" class="form-control" placeholder="email@example.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="registerPassword">Password</label>
+                            <input type="password" id="registerPassword" class="form-control" placeholder="password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">Register</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div id="mainContent" class="hidden">
+            <div class="quick-stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalModels">0</div>
+                    <div class="stat-label">Total Models</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="storageUsed">0 MB</div>
+                    <div class="stat-label">Storage Used</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalDownloads">0</div>
+                    <div class="stat-label">Downloads</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">99.9%</div>
+                    <div class="stat-label">Uptime</div>
+                </div>
+            </div>
+            
+            <div class="main-content">
+                <div class="sidebar">
+                    <div class="sidebar-section">
+                        <h3 class="sidebar-title">System Info</h3>
+                        <div class="system-info">
+                            <h4>Server Status</h4>
+                            <ul>
+                                <li>Node.js v18.17.0</li>
+                                <li>PostgreSQL 15.3</li>
+                                <li>Docker 24.0.2</li>
+                                <li>Models: <span id="modelCount">0</span> active</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="sidebar-section">
+                        <h3 class="sidebar-title">Quick Upload</h3>
+                        <div class="form-group">
+                            <label for="modelName">Model Name</label>
+                            <input type="text" id="modelName" class="form-control" placeholder="model-name">
+                        </div>
+                        <div class="form-group">
+                            <label for="taskType">Task Type</label>
+                            <select id="taskType" class="form-control">
+                                <option value="detect">detect</option>
+                                <option value="obb">obb</option>
+                                <option value="pose">pose</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="visibility">Visibility</label>
+                            <select id="visibility" class="form-control">
+                                <option value="private">private</option>
+                                <option value="members">members</option>
+                                <option value="public">public</option>
+                            </select>
+                        </div>
+                        <div class="upload-zone" id="uploadZone">
+                            <span class="icon">📁</span>
+                            <h3>Drop files here</h3>
+                            <p>or click to browse</p>
+                        </div>
+                        <div class="upload-file-list" id="uploadFileList"></div>
+                        <div class="upload-progress" id="uploadProgress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progressFill"></div>
+                            </div>
+                            <div class="command-hint" id="progressText">Uploading...</div>
+                        </div>
+                        <button class="btn btn-primary" id="uploadButton" style="width: 100%;">
+                            Upload Model
+                        </button>
+                        <div class="command-hint">
+                            curl -X POST -F "files=@model.zip" /api/models
+                        </div>
+                    </div>
+                    
+                    <div class="sidebar-section">
+                        <h3 class="sidebar-title">Commands</h3>
+                        <button class="btn btn-secondary" id="exportButton" style="width: 100%; margin-bottom: 8px;">
+                            Export Models List
+                        </button>
+                        <button class="btn btn-secondary" id="generateApiKeyButton" style="width: 100%; margin-bottom: 8px;">
+                            Generate API Key
+                        </button>
+                        <button class="btn btn-danger" id="logoutButton" style="width: 100%;">
+                            Logout
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="models-section">
+                    <div class="models-header">
+                        <h2 class="models-title">models.db</h2>
+                        <div class="models-controls">
+                            <div class="search-box">
+                                <input type="text" id="searchModels" placeholder="search models...">
+                            </div>
+                            <select class="filter-select" id="filterTask">
+                                <option value="">--task</option>
+                                <option value="detect">detect</option>
+                                <option value="obb">obb</option>
+                                <option value="pose">pose</option>
+                            </select>
+                            <select class="filter-select" id="filterVisibility">
+                                <option value="">--visibility</option>
+                                <option value="public">public</option>
+                                <option value="members">members</option>
+                                <option value="private">private</option>
+                            </select>
+                            <button class="btn btn-secondary" id="refreshModels">Refresh</button>
+                        </div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table class="models-table" id="modelsTable">
+                            <thead>
+                                <tr>
+                                    <th class="sortable" data-sort="name">model_name</th>
+                                    <th class="sortable" data-sort="owner">owner</th>
+                                    <th class="sortable" data-sort="task_type">task_type</th>
+                                    <th class="sortable" data-sort="visibility">visibility</th>
+                                    <th class="sortable" data-sort="zoom_level">zoom_level</th>
+                                    <th class="sortable" data-sort="file_size">file_size</th>
+                                    <th class="sortable" data-sort="version">version</th>
+                                    <th class="sortable" data-sort="created_at">created_at</th>
+                                    <th>actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modelsTableBody">
+                                <!-- Models will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="pagination" id="pagination">
+                        <!-- Pagination will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let authToken = localStorage.getItem('authToken');
+        let currentUser = null;
+        let registrationEnabled = true;
+        let allModels = [];
+        let filteredModels = [];
+        let currentPage = 1;
+        let itemsPerPage = 10;
+        let sortColumn = 'created_at';
+        let sortDirection = 'desc';
+        let selectedFiles = [];
+
+        // DOM elements
+        const authSection = document.getElementById('authSection');
+        const mainContent = document.getElementById('mainContent');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const currentUserInfo = document.getElementById('currentUserInfo');
+        const userAvatar = document.getElementById('userAvatar');
+        const userName = document.getElementById('userName');
+        const uploadZone = document.getElementById('uploadZone');
+        const uploadFileList = document.getElementById('uploadFileList');
+        const uploadProgress = document.getElementById('uploadProgress');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const uploadButton = document.getElementById('uploadButton');
+        const modelsTableBody = document.getElementById('modelsTableBody');
+        const searchModels = document.getElementById('searchModels');
+        const filterTask = document.getElementById('filterTask');
+        const filterVisibility = document.getElementById('filterVisibility');
+        const refreshModels = document.getElementById('refreshModels');
+        const pagination = document.getElementById('pagination');
+        const logoutButton = document.getElementById('logoutButton');
+        const exportButton = document.getElementById('exportButton');
+        const generateApiKeyButton = document.getElementById('generateApiKeyButton');
+
+        // Initialize app
+        async function init() {
+            await checkAuthStatus();
+            await loadInitialData();
+            setupEventListeners();
+        }
+
+        // Check authentication status
+        async function checkAuthStatus() {
+            if (!authToken) {
+                showAuthSection();
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth/me', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    currentUser = await response.json();
+                    showMainContent();
+                } else {
+                    localStorage.removeItem('authToken');
+                    authToken = null;
+                    showAuthSection();
+                }
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                localStorage.removeItem('authToken');
+                authToken = null;
+                showAuthSection();
+            }
+        }
+
+        // Show authentication section
+        function showAuthSection() {
+            authSection.classList.remove('hidden');
+            mainContent.classList.add('hidden');
+        }
+
+        // Show main content
+        function showMainContent() {
+            authSection.classList.add('hidden');
+            mainContent.classList.remove('hidden');
+            
+            if (currentUser) {
+                currentUserInfo.classList.remove('hidden');
+                userAvatar.textContent = currentUser.username.substring(0, 2).toUpperCase();
+                userName.textContent = currentUser.username;
+            }
+        }
+
+        // Load initial data
+        async function loadInitialData() {
+            if (authToken) {
+                await loadModels();
+                await updateStats();
+            }
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Auth forms
+            loginForm.addEventListener('submit', handleLogin);
+            registerForm.addEventListener('submit', handleRegister);
+            
+            // Upload
+            uploadZone.addEventListener('click', () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.webkitdirectory = true;
+                input.multiple = true;
+                input.onchange = handleFileSelect;
+                input.click();
+            });
+            
+            uploadZone.addEventListener('dragover', handleDragOver);
+            uploadZone.addEventListener('dragleave', handleDragLeave);
+            uploadZone.addEventListener('drop', handleDrop);
+            
+            uploadButton.addEventListener('click', handleUpload);
+            
+            // Search and filters
+            searchModels.addEventListener('input', debounce(handleSearch, 300));
+            filterTask.addEventListener('change', handleFilter);
+            filterVisibility.addEventListener('change', handleFilter);
+            refreshModels.addEventListener('click', loadModels);
+            
+            // Table sorting
+            document.querySelectorAll('.sortable').forEach(th => {
+                th.addEventListener('click', () => handleSort(th.dataset.sort));
+            });
+            
+            // Buttons
+            logoutButton.addEventListener('click', handleLogout);
+            exportButton.addEventListener('click', handleExport);
+            generateApiKeyButton.addEventListener('click', handleGenerateApiKey);
+        }
+
+        // Handle login
+        async function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    authToken = data.token;
+                    localStorage.setItem('authToken', authToken);
+                    currentUser = data.user;
+                    showMainContent();
+                    await loadInitialData();
+                } else {
+                    const error = await response.json();
+                    alert(error.message || 'Login failed');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('Login failed');
+            }
+        }
+
+        // Handle register
+        async function handleRegister(e) {
+            e.preventDefault();
+            const username = document.getElementById('registerUsername').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, email, password })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    authToken = data.token;
+                    localStorage.setItem('authToken', authToken);
+                    currentUser = data.user;
+                    showMainContent();
+                    await loadInitialData();
+                } else {
+                    const error = await response.json();
+                    alert(error.message || 'Registration failed');
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                alert('Registration failed');
+            }
+        }
+
+        // Handle logout
+        function handleLogout() {
+            localStorage.removeItem('authToken');
+            authToken = null;
+            currentUser = null;
+            showAuthSection();
+        }
+
+        // File drag and drop handlers
+        function handleDragOver(e) {
+            e.preventDefault();
+            uploadZone.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            uploadZone.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            uploadZone.classList.remove('drag-over');
+            const items = e.dataTransfer.items;
+            handleFileItems(items);
+        }
+
+        function handleFileSelect(e) {
+            selectedFiles = Array.from(e.target.files);
+            displaySelectedFiles();
+        }
+
+        function handleFileItems(items) {
+            selectedFiles = [];
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                if (item.kind === 'file') {
+                    selectedFiles.push(item.getAsFile());
+                }
+            }
+            displaySelectedFiles();
+        }
+
+        function displaySelectedFiles() {
+            uploadFileList.innerHTML = '';
+            selectedFiles.forEach(file => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'upload-file-item';
+                fileItem.innerHTML = `
+                    <span class="file-name">${file.name}</span>
+                    <span class="file-size">${formatFileSize(file.size)}</span>
+                `;
+                uploadFileList.appendChild(fileItem);
+            });
+        }
+
+        // Handle file upload
+        async function handleUpload() {
+            if (selectedFiles.length === 0) {
+                alert('Please select files to upload');
+                return;
+            }
+
+            const modelName = document.getElementById('modelName').value;
+            const taskType = document.getElementById('taskType').value;
+            const visibility = document.getElementById('visibility').value;
+
+            if (!modelName) {
+                alert('Please enter a model name');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('name', modelName);
+            formData.append('task_type', taskType);
+            formData.append('visibility', visibility);
+            
+            selectedFiles.forEach(file => {
+                formData.append('files', file);
+            });
+
+            try {
+                uploadProgress.classList.add('active');
+                progressFill.style.width = '0%';
+                progressText.textContent = 'Uploading...';
+
+                const response = await fetch('/api/models', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: formData
+                });
+
+                if (response.ok) {
+                    progressFill.style.width = '100%';
+                    progressText.textContent = 'Upload complete!';
+                    
+                    // Reset form
+                    document.getElementById('modelName').value = '';
+                    selectedFiles = [];
+                    uploadFileList.innerHTML = '';
+                    
+                    // Reload models
+                    await loadModels();
+                    await updateStats();
+                    
+                    setTimeout(() => {
+                        uploadProgress.classList.remove('active');
+                    }, 2000);
+                } else {
+                    const error = await response.json();
+                    alert(error.message || 'Upload failed');
+                    uploadProgress.classList.remove('active');
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                alert('Upload failed');
+                uploadProgress.classList.remove('active');
+            }
+        }
+
+        // Load models
+        async function loadModels() {
+            try {
+                const response = await fetch('/api/models', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    allModels = await response.json();
+                    filteredModels = [...allModels];
+                    applyFilters();
+                    renderModels();
+                } else {
+                    console.error('Failed to load models');
+                }
+            } catch (error) {
+                console.error('Error loading models:', error);
+            }
+        }
+
+        // Apply filters
+        function applyFilters() {
+            const searchTerm = searchModels.value.toLowerCase();
+            const taskFilter = filterTask.value;
+            const visibilityFilter = filterVisibility.value;
+
+            filteredModels = allModels.filter(model => {
+                const matchesSearch = !searchTerm || 
+                    model.name.toLowerCase().includes(searchTerm) ||
+                    model.owner_username.toLowerCase().includes(searchTerm);
+                
+                const matchesTask = !taskFilter || model.task_type === taskFilter;
+                const matchesVisibility = !visibilityFilter || model.visibility === visibilityFilter;
+
+                return matchesSearch && matchesTask && matchesVisibility;
+            });
+
+            currentPage = 1;
+        }
+
+        // Handle search
+        function handleSearch() {
+            applyFilters();
+            renderModels();
+        }
+
+        // Handle filter
+        function handleFilter() {
+            applyFilters();
+            renderModels();
+        }
+
+        // Handle sort
+        function handleSort(column) {
+            if (sortColumn === column) {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortColumn = column;
+                sortDirection = 'asc';
+            }
+
+            // Update sort indicators
+            document.querySelectorAll('.sortable').forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+                if (th.dataset.sort === column) {
+                    th.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+                }
+            });
+
+            // Sort models
+            filteredModels.sort((a, b) => {
+                let aVal = a[column];
+                let bVal = b[column];
+
+                if (column === 'file_size') {
+                    aVal = parseInt(aVal) || 0;
+                    bVal = parseInt(bVal) || 0;
+                } else if (column === 'created_at') {
+                    aVal = new Date(aVal);
+                    bVal = new Date(bVal);
+                }
+
+                if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+                if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            renderModels();
+        }
+
+        // Render models
+        function renderModels() {
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageModels = filteredModels.slice(startIndex, endIndex);
+
+            modelsTableBody.innerHTML = '';
+
+            pageModels.forEach(model => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <div class="model-name">${model.name}</div>
+                        <div class="model-hash">sha256:${model.file_hash ? model.file_hash.substring(0, 8) : 'unknown'}...</div>
+                    </td>
+                    <td>
+                        <div class="owner-cell">
+                            <div class="owner-avatar">${model.owner_username.substring(0, 2).toUpperCase()}</div>
+                            <div class="owner-name">${model.owner_username}</div>
+                        </div>
+                    </td>
+                    <td><span class="task-badge task-${model.task_type}">${model.task_type}</span></td>
+                    <td><span class="visibility-badge visibility-${model.visibility}">${model.visibility}</span></td>
+                    <td>${model.zoom_level || 'N/A'}</td>
+                    <td><span class="file-size">${formatFileSize(model.file_size)}</span></td>
+                    <td><span class="version-info">${model.version || 'v1.0.0'}</span></td>
+                    <td><span class="date-info">${formatDate(model.created_at)}</span></td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-primary btn-xs" onclick="downloadModel('${model.id}')">GET</button>
+                            <button class="btn btn-warning btn-xs" onclick="updateVisibility('${model.id}', '${model.visibility}')">PUT</button>
+                            <button class="btn btn-danger btn-xs" onclick="deleteModel('${model.id}')">DEL</button>
+                        </div>
+                    </td>
+                `;
+                modelsTableBody.appendChild(row);
+            });
+
+            renderPagination();
+        }
+
+        // Render pagination
+        function renderPagination() {
+            const totalPages = Math.ceil(filteredModels.length / itemsPerPage);
+            pagination.innerHTML = '';
+
+            // Previous button
+            const prevBtn = document.createElement('button');
+            prevBtn.textContent = '‹ prev';
+            prevBtn.disabled = currentPage === 1;
+            prevBtn.onclick = () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderModels();
+                }
+            };
+            pagination.appendChild(prevBtn);
+
+            // Page numbers
+            for (let i = 1; i <= totalPages; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.textContent = i;
+                pageBtn.className = i === currentPage ? 'active' : '';
+                pageBtn.onclick = () => {
+                    currentPage = i;
+                    renderModels();
+                };
+                pagination.appendChild(pageBtn);
+            }
+
+            // Next button
+            const nextBtn = document.createElement('button');
+            nextBtn.textContent = 'next ›';
+            nextBtn.disabled = currentPage === totalPages;
+            nextBtn.onclick = () => {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderModels();
+                }
+            };
+            pagination.appendChild(nextBtn);
+        }
+
+        // Model actions
+        async function downloadModel(modelId) {
+            try {
+                const response = await fetch(`/api/models/${modelId}/download`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `model-${modelId}.zip`;
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                } else {
+                    alert('Download failed');
+                }
+            } catch (error) {
+                console.error('Download error:', error);
+                alert('Download failed');
+            }
+        }
+
+        async function updateVisibility(modelId, currentVisibility) {
+            const visibilityOptions = ['private', 'members', 'public'];
+            const currentIndex = visibilityOptions.indexOf(currentVisibility);
+            const newVisibility = visibilityOptions[(currentIndex + 1) % visibilityOptions.length];
+
+            try {
+                const response = await fetch(`/api/models/${modelId}/visibility`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ visibility: newVisibility })
+                });
+
+                if (response.ok) {
+                    await loadModels();
+                } else {
+                    alert('Failed to update visibility');
+                }
+            } catch (error) {
+                console.error('Visibility update error:', error);
+                alert('Failed to update visibility');
+            }
+        }
+
+        async function deleteModel(modelId) {
+            if (!confirm('Are you sure you want to delete this model?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/models/${modelId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    await loadModels();
+                    await updateStats();
+                } else {
+                    alert('Failed to delete model');
+                }
+            } catch (error) {
+                console.error('Delete error:', error);
+                alert('Failed to delete model');
+            }
+        }
+
+        // Update stats
+        async function updateStats() {
+            try {
+                const response = await fetch('/api/stats', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    const stats = await response.json();
+                    document.getElementById('totalModels').textContent = stats.totalModels || allModels.length;
+                    document.getElementById('storageUsed').textContent = formatFileSize(stats.storageUsed || 0);
+                    document.getElementById('totalDownloads').textContent = stats.totalDownloads || 0;
+                    document.getElementById('modelCount').textContent = stats.totalModels || allModels.length;
+                } else {
+                    // Fallback to basic stats
+                    document.getElementById('totalModels').textContent = allModels.length;
+                    document.getElementById('modelCount').textContent = allModels.length;
+                }
+            } catch (error) {
+                console.error('Stats error:', error);
+                document.getElementById('totalModels').textContent = allModels.length;
+                document.getElementById('modelCount').textContent = allModels.length;
+            }
+        }
+
+        // Handle export
+        function handleExport() {
+            const csvContent = "data:text/csv;charset=utf-8," + 
+                "Name,Owner,Task Type,Visibility,Zoom Level,File Size,Version,Created At\n" +
+                filteredModels.map(model => 
+                    `"${model.name}","${model.owner_username}","${model.task_type}","${model.visibility}","${model.zoom_level || 'N/A'}","${formatFileSize(model.file_size)}","${model.version || 'v1.0.0'}","${formatDate(model.created_at)}"`
+                ).join("\n");
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "models.csv");
+            link.click();
+        }
+
+        // Handle generate API key
+        async function handleGenerateApiKey() {
+            try {
+                const response = await fetch('/api/auth/generate-key', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    alert(`API Key generated: ${data.apiKey}`);
+                } else {
+                    alert('Failed to generate API key');
+                }
+            } catch (error) {
+                console.error('API key generation error:', error);
+                alert('Failed to generate API key');
+            }
+        }
+
+        // Utility functions
+        function formatFileSize(bytes) {
+            if (!bytes) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleDateString();
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Initialize app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
