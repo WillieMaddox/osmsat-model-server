@@ -26,7 +26,7 @@ services:
       - DB_USER=osmsat
       - DB_PASSWORD=osmsat123
       - JWT_SECRET=your-production-secret-key-here
-      # - DISABLE_REGISTRATION=true  # Uncomment to disable new user registration
+      - DISABLE_REGISTRATION_WITHOUT_LINK=true  # Disable registration without invite links
     volumes:
       - ./uploads:/app/uploads
       - ./public:/app/public
