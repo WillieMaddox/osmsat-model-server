@@ -29,13 +29,89 @@
             border-right: 1px solid #e2e8f0;
             padding: 24px;
             box-shadow: 2px 0 8px rgba(0,0,0,0.04);
+            overflow-y: auto;
+            height: 100vh;
         }
         
         .sidebar h1 {
             font-size: 24px;
             font-weight: 700;
             color: #1e293b;
-            margin-bottom: 32px;
+            margin-bottom: 24px;
+        }
+        
+        .sidebar #authSection {
+            margin: 24px 0;
+            padding: 24px 0;
+            border-top: 1px solid #e2e8f0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .sidebar .nav-item {
+            display: block;
+            padding: 12px 16px;
+            color: #475569;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+        }
+        
+        .sidebar .nav-item:hover {
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+        
+        .sidebar .nav-item.active {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .sidebar #authSection .btn {
+            width: 100%;
+            margin-bottom: 8px;
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+        
+        .sidebar #authSection #userInfo {
+            display: block;
+            margin-bottom: 16px;
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: 6px;
+            font-size: 14px;
+            text-align: center;
+        }
+        
+        .sidebar .auth-form {
+            background: none;
+            padding: 0;
+            border-radius: 0;
+            margin-bottom: 16px;
+            box-shadow: none;
+        }
+        
+        .sidebar .auth-form h3 {
+            font-size: 16px;
+            margin-bottom: 16px;
+            color: #1e293b;
+        }
+        
+        .sidebar .auth-form .form-control {
+            margin-bottom: 12px;
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+        
+        .sidebar .auth-form .btn {
+            width: 100%;
+            margin-bottom: 0;
         }
         
         .nav-section {
@@ -449,19 +525,10 @@
         <aside class="sidebar">
             <h1>OSMSAT</h1>
             
-            <nav class="nav-section">
-                <h3>Navigation</h3>
-                <a href="#" class="nav-item active">Upload Model</a>
-            </nav>
+            <button class="nav-item hidden" id="uploadModelToggle">Upload Model</button>
             
-            <nav class="nav-section">
-                <h3>Account</h3>
-                <button class="nav-item" id="inviteUser">Invite User</button>
-                <button class="nav-item" id="logout">Logout</button>
-            </nav>
-        </aside>
-        
-        <main class="main-content">
+            <button class="nav-item hidden" id="inviteUser">Invite User</button>
+            
             <div id="authSection">
                 <button id="showLogin" class="btn btn-secondary">Login</button>
                 <button id="showRegister" class="btn btn-secondary">Register</button>
@@ -481,14 +548,12 @@
                     <input type="password" id="registerPassword" placeholder="Password" class="form-control">
                     <button onclick="register()" class="btn btn-primary">Register</button>
                 </div>
-                
             </div>
             
-            <div class="header">
-                <div class="user-actions">
-                </div>
-            </div>
-            
+            <button class="nav-item hidden" id="logout">Logout</button>
+        </aside>
+        
+        <main class="main-content">
             <div id="uploadSection" class="content-section hidden">
                 <div class="section-header">
                     <h3>Upload Model</h3>
@@ -675,6 +740,13 @@
                 };
             }
 
+            const uploadToggleBtn = document.getElementById('uploadModelToggle');
+            if (uploadToggleBtn) {
+                uploadToggleBtn.onclick = function() {
+                    toggleUploadSection();
+                };
+            }
+
 
             setupFileDropZone();
             setupModelNameValidation();
@@ -690,13 +762,29 @@
             }
         }
 
+        function toggleUploadSection() {
+            const uploadSection = document.getElementById('uploadSection');
+            const toggleBtn = document.getElementById('uploadModelToggle');
+            
+            if (uploadSection && toggleBtn) {
+                uploadSection.classList.toggle('hidden');
+                
+                // Update button appearance to show active state
+                if (uploadSection.classList.contains('hidden')) {
+                    toggleBtn.classList.remove('active');
+                } else {
+                    toggleBtn.classList.add('active');
+                }
+            }
+        }
+
         function showLoggedInState() {
             const showLogin = document.getElementById('showLogin');
             const showRegister = document.getElementById('showRegister');
             const userInfo = document.getElementById('userInfo');
             const logout = document.getElementById('logout');
             const inviteUser = document.getElementById('inviteUser');
-            const uploadSection = document.getElementById('uploadSection');
+            const uploadToggleBtn = document.getElementById('uploadModelToggle');
             const username = document.getElementById('username');
 
             if (showLogin) showLogin.classList.add('hidden');
@@ -704,7 +792,7 @@
             if (userInfo) userInfo.classList.remove('hidden');
             if (logout) logout.classList.remove('hidden');
             if (inviteUser) inviteUser.classList.remove('hidden');
-            if (uploadSection) uploadSection.classList.remove('hidden');
+            if (uploadToggleBtn) uploadToggleBtn.classList.remove('hidden');
             if (currentUser && username) {
                 username.textContent = currentUser.username;
             }
@@ -717,12 +805,14 @@
             const logout = document.getElementById('logout');
             const inviteUser = document.getElementById('inviteUser');
             const uploadSection = document.getElementById('uploadSection');
+            const uploadToggleBtn = document.getElementById('uploadModelToggle');
 
             if (showLogin) showLogin.classList.remove('hidden');
             if (userInfo) userInfo.classList.add('hidden');
             if (logout) logout.classList.add('hidden');
             if (inviteUser) inviteUser.classList.add('hidden');
             if (uploadSection) uploadSection.classList.add('hidden');
+            if (uploadToggleBtn) uploadToggleBtn.classList.add('hidden');
             updateRegistrationUI();
         }
 
