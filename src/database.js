@@ -125,6 +125,22 @@ const createTables = async () => {
       console.error('Migration error for visibility column:', err);
     }
 
+    // Add invite token columns for issue #5 (migration)
+    try {
+      await client.query(`
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS invite_token VARCHAR(16) DEFAULT NULL;
+      `);
+      await client.query(`
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS invite_token_expires TIMESTAMP DEFAULT NULL;
+      `);
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_users_invite_token ON users(invite_token);
+      `);
+      console.log('Migration: invite token columns added/verified');
+    } catch (err) {
+      console.error('Migration error for invite token columns:', err);
+    }
+
     console.log('Database tables created successfully');
   } catch (err) {
     console.error('Error creating tables:', err);
