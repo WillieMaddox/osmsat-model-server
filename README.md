@@ -92,9 +92,6 @@ version: "1.0.0"
 date: "2025-01-15"
 ```
 
-### Zoom Level Support
-Models can be configured for specific zoom levels (8-21) to optimize performance at different map scales.
-
 ## Environment Variables
 
 - `PORT` - Server port (default: 3001)
