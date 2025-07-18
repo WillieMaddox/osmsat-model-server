@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSMSAT Model Server</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .model-card {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .auth-form {
+            display: none;
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .auth-form.active {
+            display: block;
+        }
+        input, select, textarea, button {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .task-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .task-detect { background: #e3f2fd; color: #1976d2; }
+        .task-obb { background: #f3e5f5; color: #7b1fa2; }
+        .task-pose { background: #e8f5e8; color: #388e3c; }
+        .hidden { display: none; }
+        .error { color: #d32f2f; }
+        .success { color: #388e3c; }
+        .file-drop-zone {
+            border: 2px dashed #007bff;
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px 0;
+        }
+        .file-drop-zone:hover {
+            border-color: #0056b3;
+            background: #e3f2fd;
+        }
+        .file-drop-zone.drag-over {
+            border-color: #28a745;
+            background: #d4edda;
+            border-style: solid;
+        }
+        .drop-zone-content p {
+            margin: 5px 0;
+        }
+        .selected-files {
+            margin-top: 15px;
+            text-align: left;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        .file-item {
+            background: #e9ecef;
+            padding: 5px 10px;
+            margin: 2px 0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .file-validation {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .validation-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .validation-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <h1>OSMSAT Model Server</h1>
+    
+    <div id="authSection">
+        <button id="showLogin">Login</button>
+        <button id="showRegister">Register</button>
+        <span id="userInfo" class="hidden">Welcome, <span id="username"></span>!</span>
+        <button id="logout" class="hidden">Logout</button>
+        <button id="inviteUser" class="hidden">Invite User</button>
+        
+        <div id="loginForm" class="auth-form">
+            <h3>Login</h3>
+            <input type="text" id="loginUsername" placeholder="Username">
+            <input type="password" id="loginPassword" placeholder="Password">
+            <button onclick="login()">Login</button>
+        </div>
+        
+        <div id="registerForm" class="auth-form">
+            <h3>Register</h3>
+            <input type="text" id="registerUsername" placeholder="Username">
+            <input type="email" id="registerEmail" placeholder="Email">
+            <input type="password" id="registerPassword" placeholder="Password">
+            <button onclick="register()">Register</button>
+        </div>
+        
+        <div id="invitePopup" class="auth-form">
+            <h3>Invite User</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span>Invite Link:</span>
+                <button onclick="closeInvitePopup()" style="width: auto; padding: 5px 10px;">Close</button>
+            </div>
+            <input type="text" id="inviteLink" readonly style="background: #f5f5f5;">
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button onclick="copyInviteLink()" style="width: auto; flex: 1;">Copy Link</button>
+                <button onclick="resetInviteToken()" style="width: auto; flex: 1; background: #ffc107; color: #000;">Reset Link</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="uploadSection" class="container hidden">
+        <h3>Upload Model</h3>
+        <input type="text" id="modelName" placeholder="Model Name">
+        <textarea id="modelDescription" placeholder="Model Description"></textarea>
+        <div style="display: flex; gap: 10px;">
+            <div style="flex: 1;">
+                <label for="modelTaskType">Task Type:</label>
+                <select id="modelTaskType">
+                    <option value="detect">Detect</option>
+                    <option value="obb">OBB</option>
+                    <option value="pose">Pose</option>
+                </select>
+            </div>
+            <div style="flex: 1;">
+                <label for="modelZoomLevel">Zoom Level:</label>
+                <select id="modelZoomLevel">
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                    <option value="10">10</option>
+                    <option value="11">11</option>
+                    <option value="12">12</option>
+                    <option value="13">13</option>
+                    <option value="14">14</option>
+                    <option value="15">15</option>
+                    <option value="16">16</option>
+                    <option value="17">17</option>
+                    <option value="18">18</option>
+                    <option value="19" selected>19</option>
+                    <option value="20">20</option>
+                    <option value="21">21</option>
+                </select>
+            </div>
+        </div>
+        <input type="text" id="modelVersion" placeholder="Version">
+        <input type="text" id="modelCreated" placeholder="Created Date" readonly>
+        
+        <div style="margin: 10px 0;">
+            <label for="modelVisibility">Visibility:</label>
+            <select id="modelVisibility">
+                <option value="private">Private (Owner only)</option>
+                <option value="members">Members (All registered users)</option>
+                <option value="public">Public (Everyone)</option>
+            </select>
+        </div>
+        
+        <div id="fileDropZone" class="file-drop-zone">
+            <div class="drop-zone-content">
+                <p><strong>Drag & Drop Model Folder Here</strong></p>
+                <p>Or click to select folder</p>
+                <div id="fileValidation" class="file-validation"></div>
+                <div id="selectedFiles" class="selected-files"></div>
+            </div>
+            <input type="file" id="modelFiles" multiple webkitdirectory style="display: none;">
+        </div>
+        
+        <button id="uploadModelBtn" onclick="uploadModel()" disabled>Upload Model</button>
+    </div>
+
+    <div class="container">
+        <h3>Available Models</h3>
+        <div id="modelsList"></div>
+    </div>
+
+    <script>
+        let authToken = localStorage.getItem('authToken');
+        let currentUser = null;
+        let registrationEnabled = true;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, setting up event handlers');
+            
+            fetchRegistrationStatus().then(() => {
+                if (authToken) {
+                    fetchCurrentUser().then(() => {
+                        showLoggedInState();
+                    });
+                }
+            });
+
+            const showLoginBtn = document.getElementById('showLogin');
+            const showRegisterBtn = document.getElementById('showRegister');
+            const logoutBtn = document.getElementById('logout');
+            
+            console.log('Found elements:', showLoginBtn, showRegisterBtn, logoutBtn);
+
+            if (showLoginBtn) {
+                showLoginBtn.onclick = function() {
+                    console.log('Login button clicked');
+                    document.getElementById('loginForm').classList.add('active');
+                    document.getElementById('registerForm').classList.remove('active');
+                };
+            }
+
+            if (showRegisterBtn) {
+                showRegisterBtn.onclick = function() {
+                    console.log('Register button clicked');
+                    if (!registrationEnabled) {
+                        alert('Registration is currently disabled');
+                        return;
+                    }
+                    document.getElementById('registerForm').classList.add('active');
+                    document.getElementById('loginForm').classList.remove('active');
+                };
+            }
+
+            if (logoutBtn) {
+                logoutBtn.onclick = function() {
+                    console.log('Logout button clicked');
+                    localStorage.removeItem('authToken');
+                    authToken = null;
+                    currentUser = null;
+                    showLoggedOutState();
+                    loadModels();
+                };
+            }
+
+            const inviteBtn = document.getElementById('inviteUser');
+            if (inviteBtn) {
+                inviteBtn.onclick = function() {
+                    showInvitePopup();
+                };
+            }
+
+            setupFileDropZone();
+            setupModelNameValidation();
+            loadModels();
+        });
+
+        function setupModelNameValidation() {
+            const modelNameInput = document.getElementById('modelName');
+            modelNameInput.addEventListener('input', updateUploadButtonState);
+            modelNameInput.addEventListener('blur', updateUploadButtonState);
+        }
+
+        function showLoggedInState() {
+            document.getElementById('showLogin').classList.add('hidden');
+            document.getElementById('showRegister').classList.add('hidden');
+            document.getElementById('userInfo').classList.remove('hidden');
+            document.getElementById('logout').classList.remove('hidden');
+            document.getElementById('inviteUser').classList.remove('hidden');
+            document.getElementById('uploadSection').classList.remove('hidden');
+            if (currentUser) {
+                document.getElementById('username').textContent = currentUser.username;
+            }
+        }
+
+        function showLoggedOutState() {
+            document.getElementById('showLogin').classList.remove('hidden');
+            document.getElementById('userInfo').classList.add('hidden');
+            document.getElementById('logout').classList.add('hidden');
+            document.getElementById('inviteUser').classList.add('hidden');
+            document.getElementById('uploadSection').classList.add('hidden');
+            updateRegistrationUI();
+        }
+
+        function setupFileDropZone() {
+            const dropZone = document.getElementById('fileDropZone');
+            const fileInput = document.getElementById('modelFiles');
+            const selectedFilesDiv = document.getElementById('selectedFiles');
+
+            // Click to browse files
+            dropZone.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            // File input change event
+            fileInput.addEventListener('change', (e) => {
+                handleFiles(e.target.files);
+            });
+
+            // Drag and drop events
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('drag-over');
+            });
+
+            dropZone.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-over');
+            });
+
+            dropZone.addEventListener('drop', async (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-over');
+                
+                const items = e.dataTransfer.items;
+                
+                if (items) {
+                    // Handle directory drop using DataTransferItemList
+                    const files = await getAllFilesFromDrop(items);
+                    handleFiles(files);
+                } else {
+                    // Fallback to regular files
+                    const files = e.dataTransfer.files;
+                    handleFiles(files);
+                }
+            });
+
+            async function handleFiles(files) {
+                // Convert FileList to array and store in fileInput
+                const fileArray = Array.from(files);
+                
+                // Create a new FileList-like object for the input
+                const dt = new DataTransfer();
+                fileArray.forEach(file => dt.items.add(file));
+                fileInput.files = dt.files;
+
+                // Reset all fields to defaults first
+                resetFormToDefaults();
+
+                // Auto-populate model name from folder
+                autoPopulateModelName(fileArray);
+
+                // Validate files and auto-populate metadata
+                await validateAndPopulateFiles(fileArray);
+                
+                displaySelectedFiles(fileArray);
+            }
+
+            function displaySelectedFiles(files) {
+                selectedFilesDiv.innerHTML = '';
+                
+                if (files.length === 0) {
+                    selectedFilesDiv.innerHTML = '<p>No files selected</p>';
+                    return;
+                }
+
+                const fileList = document.createElement('div');
+                fileList.innerHTML = `<strong>${files.length} files selected:</strong>`;
+                
+                files.forEach(file => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-item';
+                    fileItem.textContent = `${file.name} (${formatFileSize(file.size)})`;
+                    fileList.appendChild(fileItem);
+                });
+
+                selectedFilesDiv.appendChild(fileList);
+            }
+
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            function autoPopulateModelName(files) {
+                if (files.length === 0) return;
+                
+                // Get folder name from first file's webkitRelativePath or name
+                const firstFile = files[0];
+                let folderName = '';
+                
+                if (firstFile.webkitRelativePath) {
+                    // From drag/drop of folder - keep all characters including underscores
+                    folderName = firstFile.webkitRelativePath.split('/')[0];
+                } else {
+                    // From file selection, try to extract common prefix
+                    const names = files.map(f => f.name);
+                    const commonPrefix = getCommonPrefix(names);
+                    folderName = commonPrefix.trim();
+                }
+                
+                if (folderName) {
+                    document.getElementById('modelName').value = folderName;
+                }
+            }
+
+            function getCommonPrefix(strings) {
+                if (strings.length === 0) return '';
+                if (strings.length === 1) return strings[0].split('.')[0];
+                
+                let prefix = strings[0];
+                for (let i = 1; i < strings.length; i++) {
+                    while (!strings[i].startsWith(prefix)) {
+                        prefix = prefix.substring(0, prefix.length - 1);
+                        if (prefix === '') return '';
+                    }
+                }
+                return prefix;
+            }
+
+            async function validateAndPopulateFiles(files) {
+                const validationDiv = document.getElementById('fileValidation');
+                
+                // Check for required file types
+                const hasYaml = files.some(f => f.name.toLowerCase().endsWith('.yaml') || f.name.toLowerCase().endsWith('.yml'));
+                const hasJson = files.some(f => f.name.toLowerCase().endsWith('.json'));
+                const hasBin = files.some(f => f.name.toLowerCase().endsWith('.bin'));
+                
+                const missing = [];
+                if (!hasYaml) missing.push('YAML metadata file');
+                if (!hasJson) missing.push('JSON model file');
+                if (!hasBin) missing.push('BIN weight file(s)');
+                
+                if (missing.length > 0) {
+                    validationDiv.innerHTML = `<div class="validation-error">Missing required files: ${missing.join(', ')}</div>`;
+                    updateUploadButtonState();
+                    return;
+                }
+                
+                validationDiv.innerHTML = '<div class="validation-success">✓ All required files found</div>';
+                
+                // Try to read and parse YAML file for auto-population
+                const yamlFile = files.find(f => f.name.toLowerCase().endsWith('.yaml') || f.name.toLowerCase().endsWith('.yml'));
+                if (yamlFile) {
+                    try {
+                        const yamlText = await readFileAsText(yamlFile);
+                        parseAndPopulateYaml(yamlText);
+                    } catch (err) {
+                        console.log('Could not parse YAML file:', err);
+                    }
+                }
+                
+                // Update upload button state after auto-population
+                updateUploadButtonState();
+            }
+
+            function readFileAsText(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = e => resolve(e.target.result);
+                    reader.onerror = reject;
+                    reader.readAsText(file);
+                });
+            }
+
+            function parseAndPopulateYaml(yamlText) {
+                try {
+                    // Simple YAML parsing (for basic key-value pairs)
+                    const lines = yamlText.split('\n');
+                    const metadata = {};
+                    
+                    lines.forEach(line => {
+                        const colonIndex = line.indexOf(':');
+                        if (colonIndex > 0) {
+                            const key = line.substring(0, colonIndex).trim();
+                            const value = line.substring(colonIndex + 1).trim().replace(/['"]/g, '');
+                            metadata[key] = value;
+                        }
+                    });
+                    
+                    // Auto-populate fields
+                    if (metadata.description && !document.getElementById('modelDescription').value) {
+                        document.getElementById('modelDescription').value = metadata.description;
+                    }
+                    
+                    if (metadata.date && !document.getElementById('modelCreated').value) {
+                        // Convert timestamp to readable date and time format
+                        const dateValue = metadata.date.includes('T') ? 
+                            new Date(metadata.date).toLocaleString() : 
+                            metadata.date;
+                        document.getElementById('modelCreated').value = dateValue;
+                    }
+                    
+                    if (metadata.version && !document.getElementById('modelVersion').value) {
+                        document.getElementById('modelVersion').value = metadata.version;
+                    }
+                    
+                    if (metadata.task) {
+                        const taskSelect = document.getElementById('modelTaskType');
+                        const taskValue = metadata.task.toLowerCase();
+                        if (['detect', 'obb', 'pose'].includes(taskValue)) {
+                            taskSelect.value = taskValue;
+                        }
+                    }
+                    
+                } catch (err) {
+                    console.log('Error parsing YAML:', err);
+                }
+            }
+
+        }
+
+        async function getAllFilesFromDrop(items) {
+            const files = [];
+            
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                if (item.kind === 'file') {
+                    const entry = item.webkitGetAsEntry();
+                    if (entry) {
+                        if (entry.isDirectory) {
+                            const dirFiles = await readDirectory(entry);
+                            files.push(...dirFiles);
+                        } else {
+                            const file = item.getAsFile();
+                            if (file) files.push(file);
+                        }
+                    }
+                }
+            }
+            
+            return files;
+        }
+
+        async function readDirectory(dirEntry) {
+            const files = [];
+            
+            return new Promise((resolve) => {
+                const dirReader = dirEntry.createReader();
+                
+                function readEntries() {
+                    dirReader.readEntries(async (entries) => {
+                        if (entries.length === 0) {
+                            resolve(files);
+                            return;
+                        }
+                        
+                        for (const entry of entries) {
+                            if (entry.isFile) {
+                                const file = await new Promise((resolve) => {
+                                    entry.file(resolve);
+                                });
+                                // Set webkitRelativePath for proper folder name extraction
+                                Object.defineProperty(file, 'webkitRelativePath', {
+                                    value: entry.fullPath.substring(1), // Remove leading slash
+                                    writable: false
+                                });
+                                files.push(file);
+                            } else if (entry.isDirectory) {
+                                const subFiles = await readDirectory(entry);
+                                files.push(...subFiles);
+                            }
+                        }
+                        
+                        readEntries(); // Continue reading if there are more entries
+                    });
+                }
+                
+                readEntries();
+            });
+        }
+
+        function resetFormToDefaults() {
+            // Reset all form fields to their default values
+            document.getElementById('modelName').value = '';
+            document.getElementById('modelDescription').value = '';
+            document.getElementById('modelVersion').value = '';
+            document.getElementById('modelCreated').value = '';
+            document.getElementById('modelTaskType').value = 'detect';
+            document.getElementById('modelZoomLevel').value = '19';
+            document.getElementById('modelVisibility').value = 'private';
+            
+            // Clear validation and file display
+            document.getElementById('fileValidation').innerHTML = '';
+            document.getElementById('selectedFiles').innerHTML = '';
+            
+            // Disable upload button initially
+            document.getElementById('uploadModelBtn').disabled = true;
+        }
+
+        function updateUploadButtonState() {
+            const modelName = document.getElementById('modelName').value.trim();
+            const hasValidFiles = document.getElementById('fileValidation').innerHTML.includes('validation-success');
+            const uploadBtn = document.getElementById('uploadModelBtn');
+            
+            // Enable upload button only if both model name exists and files are valid
+            uploadBtn.disabled = !(modelName && hasValidFiles);
+        }
+
+        async function login() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    authToken = data.token;
+                    currentUser = data.user;
+                    localStorage.setItem('authToken', authToken);
+                    showLoggedInState();
+                    document.getElementById('loginForm').classList.remove('active');
+                    loadModels();
+                } else {
+                    alert('Login failed: ' + data.error);
+                }
+            } catch (err) {
+                alert('Login failed: ' + err.message);
+            }
+        }
+
+        async function register() {
+            const username = document.getElementById('registerUsername').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+
+            const requestBody = { username, email, password };
+            if (token) {
+                requestBody.token = token;
+            }
+
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody)
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    authToken = data.token;
+                    currentUser = data.user;
+                    localStorage.setItem('authToken', authToken);
+                    showLoggedInState();
+                    document.getElementById('registerForm').classList.remove('active');
+                    
+                    if (token) {
+                        const url = new URL(window.location);
+                        url.searchParams.delete('token');
+                        window.history.replaceState({}, document.title, url.pathname + url.search);
+                    }
+                    
+                    loadModels();
+                } else {
+                    alert('Registration failed: ' + data.error);
+                }
+            } catch (err) {
+                alert('Registration failed: ' + err.message);
+            }
+        }
+
+        async function showInvitePopup() {
+            try {
+                const response = await fetch('/api/auth/generate-invite-token', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('inviteLink').value = data.url;
+                    document.getElementById('invitePopup').classList.add('active');
+                    document.getElementById('loginForm').classList.remove('active');
+                    document.getElementById('registerForm').classList.remove('active');
+                } else {
+                    const errorData = await response.json();
+                    alert('Failed to generate invite link: ' + errorData.error);
+                }
+            } catch (err) {
+                alert('Failed to generate invite link: ' + err.message);
+            }
+        }
+
+        function closeInvitePopup() {
+            document.getElementById('invitePopup').classList.remove('active');
+        }
+
+        async function resetInviteToken() {
+            try {
+                const response = await fetch('/api/auth/reset-invite-token', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('inviteLink').value = data.url;
+                } else {
+                    const errorData = await response.json();
+                    alert('Failed to reset invite link: ' + errorData.error);
+                }
+            } catch (err) {
+                alert('Failed to reset invite link: ' + err.message);
+            }
+        }
+
+        function copyInviteLink() {
+            const inviteLink = document.getElementById('inviteLink');
+            inviteLink.select();
+            inviteLink.setSelectionRange(0, 99999);
+            
+            try {
+                document.execCommand('copy');
+            } catch (err) {
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(inviteLink.value).then(() => {
+                    }).catch(() => {
+                        alert('Failed to copy invite link. Please copy manually.');
+                    });
+                } else {
+                    alert('Failed to copy invite link. Please copy manually.');
+                }
+            }
+        }
+
+        async function fetchCurrentUser() {
+            try {
+                const response = await fetch('/api/users/me', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                if (response.ok) {
+                    currentUser = await response.json();
+                    // Update username display if already logged in
+                    if (currentUser && currentUser.username) {
+                        document.getElementById('username').textContent = currentUser.username;
+                    }
+                } else {
+                    // Invalid token, clear it
+                    localStorage.removeItem('authToken');
+                    authToken = null;
+                    currentUser = null;
+                    showLoggedOutState();
+                }
+            } catch (err) {
+                console.error('Failed to fetch current user:', err);
+                // On error, also clear invalid token
+                localStorage.removeItem('authToken');
+                authToken = null;
+                currentUser = null;
+                showLoggedOutState();
+            }
+        }
+
+        async function fetchRegistrationStatus() {
+            try {
+                const response = await fetch('/api/auth/registration-enabled');
+                if (response.ok) {
+                    const data = await response.json();
+                    registrationEnabled = data.enabled;
+                    updateRegistrationUI();
+                } else {
+                    console.error('Failed to fetch registration status');
+                    registrationEnabled = true; // Default to enabled
+                }
+            } catch (err) {
+                console.error('Failed to fetch registration status:', err);
+                registrationEnabled = true; // Default to enabled
+            }
+        }
+
+        function updateRegistrationUI() {
+            const showRegisterBtn = document.getElementById('showRegister');
+            const registerForm = document.getElementById('registerForm');
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+            
+            if (registrationEnabled || token) {
+                showRegisterBtn.classList.remove('hidden');
+                
+                if (token) {
+                    showRegisterBtn.textContent = 'Register with Invite';
+                    registerForm.classList.add('active');
+                    document.getElementById('loginForm').classList.remove('active');
+                } else {
+                    showRegisterBtn.textContent = 'Register';
+                }
+            } else {
+                showRegisterBtn.classList.add('hidden');
+                registerForm.classList.remove('active');
+            }
+        }
+
+        async function uploadModel() {
+            const name = document.getElementById('modelName').value;
+            const description = document.getElementById('modelDescription').value;
+            const taskType = document.getElementById('modelTaskType').value;
+            const zoomLevel = parseInt(document.getElementById('modelZoomLevel').value);
+            const visibility = document.getElementById('modelVisibility').value;
+            const files = document.getElementById('modelFiles').files;
+
+            if (!name || files.length === 0) {
+                alert('Please provide a name and select files');
+                return;
+            }
+
+            const uploadBtn = document.querySelector('#uploadSection button');
+            const originalText = uploadBtn.textContent;
+            
+            try {
+                uploadBtn.textContent = 'Creating model...';
+                uploadBtn.disabled = true;
+
+                const modelResponse = await fetch('/api/models', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ name, description, task_type: taskType, zoom_level: zoomLevel, visibility: visibility })
+                });
+
+                const model = await modelResponse.json();
+                if (!modelResponse.ok) {
+                    throw new Error(model.error);
+                }
+
+                uploadBtn.textContent = `Uploading ${files.length} files...`;
+
+                const formData = new FormData();
+                
+                // Add version from form field
+                const version = document.getElementById('modelVersion').value || '1.0.0';
+                formData.append('version', version);
+                
+                // Add created date from form field (from YAML metadata)
+                const createdDate = document.getElementById('modelCreated').value;
+                if (createdDate) {
+                    formData.append('created_date', createdDate);
+                }
+                
+                // Add files
+                for (const file of files) {
+                    formData.append('files', file);
+                }
+
+                const uploadResponse = await fetch(`/api/models/${model.id}/upload`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${authToken}` },
+                    body: formData
+                });
+
+                const uploadResult = await uploadResponse.json();
+                if (uploadResponse.ok) {
+                    
+                    // Clear form completely
+                    resetFormToDefaults();
+                    
+                    // Also clear the file input by recreating it to avoid any retained file references
+                    const fileInput = document.getElementById('modelFiles');
+                    const newFileInput = fileInput.cloneNode(true);
+                    fileInput.parentNode.replaceChild(newFileInput, fileInput);
+                    
+                    // Re-setup file drop zone with new input
+                    setupFileDropZone();
+                    
+                    loadModels();
+                } else {
+                    throw new Error(uploadResult.error);
+                }
+            } catch (err) {
+                alert('Upload failed: ' + err.message);
+                console.error('Upload error:', err);
+            } finally {
+                uploadBtn.textContent = originalText;
+                uploadBtn.disabled = false;
+            }
+        }
+
+        async function loadModels() {
+            try {
+                const headers = {};
+                if (authToken) {
+                    headers['Authorization'] = `Bearer ${authToken}`;
+                }
+
+                const response = await fetch('/api/models', { headers });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const models = await response.json();
+
+                const modelsList = document.getElementById('modelsList');
+                modelsList.innerHTML = '';
+
+                if (!Array.isArray(models)) {
+                    console.error('Expected array of models, got:', models);
+                    modelsList.innerHTML = '<p>Error loading models: Invalid response format</p>';
+                    return;
+                }
+
+                models.forEach(model => {
+                    const modelCard = document.createElement('div');
+                    modelCard.className = 'model-card';
+                    
+                    const isOwner = currentUser && model.owner === currentUser.username;
+                    
+                    let visibilityBadge;
+                    switch(model.visibility) {
+                        case 'public':
+                            visibilityBadge = '<span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 12px;">Public</span>';
+                            break;
+                        case 'members':
+                            visibilityBadge = '<span style="background: #007bff; color: white; padding: 2px 6px; border-radius: 3px; font-size: 12px;">Members</span>';
+                            break;
+                        case 'private':
+                        default:
+                            visibilityBadge = '<span style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-size: 12px;">Private</span>';
+                            break;
+                    }
+                    
+                    const visibilityToggle = isOwner ? 
+                        `<select onchange="updateModelVisibility(${model.id}, this.value)" style="font-size: 12px; padding: 4px 8px; margin-left: 10px;">
+                            <option value="private" ${model.visibility === 'private' ? 'selected' : ''}>Private (Owner only)</option>
+                            <option value="members" ${model.visibility === 'members' ? 'selected' : ''}>Members (All registered users)</option>
+                            <option value="public" ${model.visibility === 'public' ? 'selected' : ''}>Public (Everyone)</option>
+                        </select>` : '';
+                    
+                    const deleteButton = isOwner ? 
+                        `<button onclick="deleteModel(${model.id})" style="background: #dc3545; margin-left: 10px;">Delete</button>` : '';
+                    
+                    modelCard.innerHTML = `
+                        <h4>${model.name} <span class="task-badge task-${model.task_type}">${model.task_type}</span> ${visibilityBadge}</h4>
+                        <p><strong>Owner:</strong> ${model.owner} ${visibilityToggle}</p>
+                        <p><strong>Description:</strong> ${model.description || 'No description'}</p>
+                        <p><strong>Version:</strong> ${model.version || 'No version'}</p>
+                        <p><strong>Zoom Level:</strong> ${model.zoom_level || 19}</p>
+                        <p><strong>Size:</strong> ${model.file_size ? Math.round(model.file_size / 1024 / 1024 * 100) / 100 + ' MB' : 'Unknown'}</p>
+                        <p><strong>Created:</strong> ${model.metadata && model.metadata.form_created_date ? model.metadata.form_created_date : (model.metadata && model.metadata.date ? new Date(model.metadata.date).toLocaleString() : new Date(model.created_at).toLocaleString())}</p>
+                        <button onclick="downloadModel(${model.id})">Download</button>${deleteButton}
+                    `;
+                    modelsList.appendChild(modelCard);
+                });
+            } catch (err) {
+                console.error('Failed to load models:', err);
+            }
+        }
+
+        async function downloadModel(modelId) {
+            try {
+                // Get list of actual files from the server
+                const response = await fetch(`/api/models/${modelId}/files`);
+                if (!response.ok) {
+                    throw new Error('Failed to get file list');
+                }
+                
+                const files = await response.json();
+                
+                if (files.length === 0) {
+                    alert('No files available for download. Model may not have been uploaded yet.');
+                    return;
+                }
+
+                // Download all files one by one but create a single notification
+                let downloadedCount = 0;
+                const downloadPromises = files.map(async (filename) => {
+                    try {
+                        const fileResponse = await fetch(`/api/models/${modelId}/download/${filename}`);
+                        if (fileResponse.ok) {
+                            const blob = await fileResponse.blob();
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = filename;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                            downloadedCount++;
+                        } else {
+                            console.error(`Error downloading ${filename}: ${fileResponse.status}`);
+                        }
+                    } catch (err) {
+                        console.log(`Error downloading ${filename}: ${err.message}`);
+                    }
+                });
+                
+                // Wait for all downloads to complete
+                await Promise.all(downloadPromises);
+                
+                console.log(`Downloaded ${downloadedCount} files`);
+            } catch (err) {
+                alert('Download failed: ' + err.message);
+            }
+        }
+
+        async function updateModelVisibility(modelId, newVisibility) {
+            try {
+                const response = await fetch(`/api/models/${modelId}/visibility`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ visibility: newVisibility })
+                });
+
+                if (response.ok) {
+                    loadModels(); // Refresh the model list
+                } else {
+                    const error = await response.json();
+                    alert('Failed to update visibility: ' + error.error);
+                }
+            } catch (err) {
+                alert('Failed to update visibility: ' + err.message);
+            }
+        }
+
+        async function deleteModel(modelId) {
+            if (!confirm('Are you sure you want to delete this model? This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/models/${modelId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    loadModels(); // Refresh the model list
+                } else {
+                    const error = await response.json();
+                    alert('Failed to delete model: ' + error.error);
+                }
+            } catch (err) {
+                alert('Failed to delete model: ' + err.message);
+            }
+        }
+    </script>
+</body>
+</html>
