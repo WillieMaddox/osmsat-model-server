@@ -643,14 +643,6 @@
                             <button id="logout" class="dropdown-item">Logout</button>
                         </div>
                     </div>
-                    
-                    <div id="registerForm" class="auth-form">
-                        <h3>Register</h3>
-                        <input type="text" id="registerUsername" placeholder="Username" class="form-control">
-                        <input type="email" id="registerEmail" placeholder="Email" class="form-control">
-                        <input type="password" id="registerPassword" placeholder="Password" class="form-control">
-                        <button onclick="register()" class="btn btn-primary">Register</button>
-                    </div>
                 </div>
             </div>
         </aside>
@@ -802,6 +794,31 @@
         </div>
     </div>
 
+    <!-- Register Modal -->
+    <div id="registerModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Register</h3>
+                <button class="modal-close" onclick="closeRegisterModal()">&times;</button>
+            </div>
+            <div class="form-group">
+                <label for="registerUsername">Username:</label>
+                <input type="text" id="registerUsername" placeholder="Username" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="registerEmail">Email:</label>
+                <input type="email" id="registerEmail" placeholder="Email" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="registerPassword">Password:</label>
+                <input type="password" id="registerPassword" placeholder="Password" class="form-control">
+            </div>
+            <div style="margin-top: 20px;">
+                <button onclick="register()" class="btn btn-primary" style="width: 100%;">Register</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let authToken = localStorage.getItem('authToken');
         let currentUser = null;
@@ -840,8 +857,7 @@
                         alert('Registration is currently disabled');
                         return;
                     }
-                    document.getElementById('registerForm').classList.add('active');
-                    document.getElementById('loginForm').classList.remove('active');
+                    showRegisterModal();
                 };
             }
 
@@ -1297,7 +1313,7 @@
                     currentUser = data.user;
                     localStorage.setItem('authToken', authToken);
                     showLoggedInState();
-                    document.getElementById('registerForm').classList.remove('active');
+                    closeRegisterModal();
                     
                     if (token) {
                         const url = new URL(window.location);
@@ -1349,6 +1365,14 @@
             document.getElementById('loginModal').classList.remove('active');
         }
         
+        function showRegisterModal() {
+            document.getElementById('registerModal').classList.add('active');
+        }
+        
+        function closeRegisterModal() {
+            document.getElementById('registerModal').classList.remove('active');
+        }
+        
         function setupModalCloseOnOutsideClick() {
             const inviteModal = document.getElementById('inviteModal');
             if (inviteModal) {
@@ -1364,6 +1388,15 @@
                 loginModal.addEventListener('click', function(e) {
                     if (e.target === loginModal) {
                         closeLoginModal();
+                    }
+                });
+            }
+            
+            const registerModal = document.getElementById('registerModal');
+            if (registerModal) {
+                registerModal.addEventListener('click', function(e) {
+                    if (e.target === registerModal) {
+                        closeRegisterModal();
                     }
                 });
             }
@@ -1490,9 +1523,8 @@
 
         function updateRegistrationUI() {
             const showRegisterBtn = document.getElementById('showRegister');
-            const registerForm = document.getElementById('registerForm');
             
-            if (!showRegisterBtn || !registerForm) return;
+            if (!showRegisterBtn) return;
             
             const urlParams = new URLSearchParams(window.location.search);
             const token = urlParams.get('token');
@@ -1502,14 +1534,12 @@
                 
                 if (token) {
                     showRegisterBtn.textContent = 'Register with Invite';
-                    registerForm.classList.add('active');
-                    document.getElementById('loginForm').classList.remove('active');
+                    showRegisterModal();
                 } else {
                     showRegisterBtn.textContent = 'Register';
                 }
             } else {
                 showRegisterBtn.classList.add('hidden');
-                registerForm.classList.remove('active');
             }
         }
 
