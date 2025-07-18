@@ -29,7 +29,11 @@ router.post('/register', async (req, res) => {
     }
   }
   
-  if (process.env.DISABLE_REGISTRATION === 'true' && !isInviteTokenValid) {
+  // Check new variable first, fall back to old for backward compatibility
+  const registrationDisabled = process.env.DISABLE_REGISTRATION_WITHOUT_LINK === 'true' || 
+                                process.env.DISABLE_REGISTRATION === 'true';
+  
+  if (registrationDisabled && !isInviteTokenValid) {
     return res.status(403).json({ error: 'Registration is disabled' });
   }
 

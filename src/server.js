@@ -103,7 +103,10 @@ app.get('/health', (req, res) => {
 });
 
 app.get('/api/auth/registration-enabled', (req, res) => {
-  const registrationEnabled = process.env.DISABLE_REGISTRATION !== 'true';
+  // Check new variable first, fall back to old for backward compatibility
+  const disableRegistration = process.env.DISABLE_REGISTRATION_WITHOUT_LINK === 'true' || 
+                               process.env.DISABLE_REGISTRATION === 'true';
+  const registrationEnabled = !disableRegistration;
   res.json({ enabled: registrationEnabled });
 });
 
