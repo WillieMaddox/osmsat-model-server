@@ -31,6 +31,20 @@
             box-shadow: 2px 0 8px rgba(0,0,0,0.04);
             overflow-y: auto;
             height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        .sidebar-content {
+            flex: 1;
+        }
+        
+        .sidebar-bottom {
+            flex-shrink: 0;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 24px;
+            margin-top: 24px;
         }
         
         .sidebar h1 {
@@ -41,8 +55,8 @@
         }
         
         .sidebar #authSection {
-            margin: 24px 0;
-            padding: 24px 0;
+            margin: 16px 0;
+            padding: 16px 0;
             border-top: 1px solid #e2e8f0;
             border-bottom: 1px solid #e2e8f0;
         }
@@ -70,6 +84,10 @@
         .sidebar .nav-item.active {
             background: #3b82f6;
             color: white;
+        }
+        
+        .sidebar .nav-item.hidden {
+            display: none !important;
         }
         
         .sidebar #authSection .btn {
@@ -529,34 +547,31 @@
 <body>
     <div class="main-container">
         <aside class="sidebar">
-            <h1>OSMSAT</h1>
-            
-            <button class="nav-item hidden" id="uploadModelToggle">Upload Model</button>
-            
-            <button class="nav-item hidden" id="inviteUser">Invite User</button>
-            
-            <div id="authSection">
-                <button id="showLogin" class="btn btn-secondary">Login</button>
-                <button id="showRegister" class="btn btn-secondary">Register</button>
-                <span id="userInfo" class="hidden"><span id="username"></span></span>
+            <div class="sidebar-content">
+                <h1>OSMSAT</h1>
                 
-                <div id="loginForm" class="auth-form">
-                    <h3>Login</h3>
-                    <input type="text" id="loginUsername" placeholder="Username" class="form-control">
-                    <input type="password" id="loginPassword" placeholder="Password" class="form-control">
-                    <button onclick="login()" class="btn btn-primary">Login</button>
-                </div>
-                
-                <div id="registerForm" class="auth-form">
-                    <h3>Register</h3>
-                    <input type="text" id="registerUsername" placeholder="Username" class="form-control">
-                    <input type="email" id="registerEmail" placeholder="Email" class="form-control">
-                    <input type="password" id="registerPassword" placeholder="Password" class="form-control">
-                    <button onclick="register()" class="btn btn-primary">Register</button>
-                </div>
+                <button class="nav-item hidden" id="uploadModelToggle">Upload Model</button>
             </div>
             
-            <button class="nav-item hidden" id="logout">Logout</button>
+            <div class="sidebar-bottom">
+                <button class="nav-item hidden" id="inviteUser">Invite User</button>
+                
+                <div id="authSection">
+                    <button id="showLogin" class="btn btn-secondary">Login</button>
+                    <button id="showRegister" class="btn btn-secondary">Register</button>
+                    <span id="userInfo" class="hidden"><span id="username"></span></span>
+                    
+                    <div id="registerForm" class="auth-form">
+                        <h3>Register</h3>
+                        <input type="text" id="registerUsername" placeholder="Username" class="form-control">
+                        <input type="email" id="registerEmail" placeholder="Email" class="form-control">
+                        <input type="password" id="registerPassword" placeholder="Password" class="form-control">
+                        <button onclick="register()" class="btn btn-primary">Register</button>
+                    </div>
+                </div>
+                
+                <button class="nav-item hidden" id="logout">Logout</button>
+            </div>
         </aside>
         
         <main class="main-content">
@@ -685,6 +700,27 @@
         </div>
     </div>
 
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Login</h3>
+                <button class="modal-close" onclick="closeLoginModal()">&times;</button>
+            </div>
+            <div class="form-group">
+                <label for="loginUsername">Username:</label>
+                <input type="text" id="loginUsername" placeholder="Username" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="loginPassword">Password:</label>
+                <input type="password" id="loginPassword" placeholder="Password" class="form-control">
+            </div>
+            <div style="margin-top: 20px;">
+                <button onclick="login()" class="btn btn-primary" style="width: 100%;">Login</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let authToken = localStorage.getItem('authToken');
         let currentUser = null;
@@ -698,6 +734,8 @@
                     fetchCurrentUser().then(() => {
                         showLoggedInState();
                     });
+                } else {
+                    showLoggedOutState();
                 }
             });
 
@@ -710,8 +748,7 @@
             if (showLoginBtn) {
                 showLoginBtn.onclick = function() {
                     console.log('Login button clicked');
-                    document.getElementById('loginForm').classList.add('active');
-                    document.getElementById('registerForm').classList.remove('active');
+                    showLoginModal();
                 };
             }
 
@@ -1145,7 +1182,7 @@
                     currentUser = data.user;
                     localStorage.setItem('authToken', authToken);
                     showLoggedInState();
-                    document.getElementById('loginForm').classList.remove('active');
+                    closeLoginModal();
                     loadModels();
                 } else {
                     alert('Login failed: ' + data.error);
@@ -1225,12 +1262,29 @@
             document.getElementById('inviteModal').classList.remove('active');
         }
         
+        function showLoginModal() {
+            document.getElementById('loginModal').classList.add('active');
+        }
+        
+        function closeLoginModal() {
+            document.getElementById('loginModal').classList.remove('active');
+        }
+        
         function setupModalCloseOnOutsideClick() {
-            const modal = document.getElementById('inviteModal');
-            if (modal) {
-                modal.addEventListener('click', function(e) {
-                    if (e.target === modal) {
+            const inviteModal = document.getElementById('inviteModal');
+            if (inviteModal) {
+                inviteModal.addEventListener('click', function(e) {
+                    if (e.target === inviteModal) {
                         closeInviteModal();
+                    }
+                });
+            }
+            
+            const loginModal = document.getElementById('loginModal');
+            if (loginModal) {
+                loginModal.addEventListener('click', function(e) {
+                    if (e.target === loginModal) {
+                        closeLoginModal();
                     }
                 });
             }
