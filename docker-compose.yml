@@ -2,9 +2,9 @@ services:
   db:
     image: postgres:15-alpine
     environment:
-      POSTGRES_DB: osmsat_models
-      POSTGRES_USER: osmsat
-      POSTGRES_PASSWORD: osmsat123
+      POSTGRES_DB: ${DB_NAME:-osmsat_models}
+      POSTGRES_USER: ${DB_USER:-osmsat}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-osmsat123}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -19,14 +19,17 @@ services:
     build: .
     ports:
       - "3001:3001"
+    expose:
+      - "8000"
     environment:
+      - NODE_ENV=${NODE_ENV:-development}
       - DB_HOST=db
       - DB_PORT=5432
-      - DB_NAME=osmsat_models
-      - DB_USER=osmsat
-      - DB_PASSWORD=osmsat123
-      - JWT_SECRET=your-production-secret-key-here
-        # - DISABLE_REGISTRATION_WITHOUT_LINK=true  # Disable registration without invite links
+      - DB_NAME=${DB_NAME:-osmsat_models}
+      - DB_USER=${DB_USER:-osmsat}
+      - DB_PASSWORD=${DB_PASSWORD:-osmsat123}
+      - JWT_SECRET=${JWT_SECRET:-your-production-secret-key-here}
+      - DISABLE_REGISTRATION_WITHOUT_LINK=${DISABLE_REGISTRATION_WITHOUT_LINK:-true}
     volumes:
       - ./uploads:/app/uploads
       - ./public:/app/public
