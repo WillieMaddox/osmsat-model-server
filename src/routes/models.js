@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs').promises;
 const { v4: uuidv4 } = require('uuid');
 const YAML = require('yamljs');
+const archiver = require('archiver');
 const { pool } = require('../database');
 const { authenticateToken, optionalAuth } = require('../middleware/auth');
 
@@ -277,6 +278,89 @@ router.get('/:id/download/:filename', optionalAuth, async (req, res) => {
   } catch (err) {
     console.error('Error downloading file:', err);
     res.status(500).json({ error: 'Failed to download file' });
+  }
+});
+
+// Bulk download all model files as ZIP archive
+router.get('/:id/download-all', optionalAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    let accessCondition;
+    const params = [id];
+    
+    if (req.user) {
+      // Authenticated users can access public, members, and their own private models
+      accessCondition = `(visibility IN ('public', 'members') OR user_id = $2)`;
+      params.push(req.user.userId);
+    } else {
+      // Anonymous users can only access public models
+      accessCondition = `visibility = 'public'`;
+    }
+    
+    const modelCheck = await pool.query(
+      `SELECT id, name FROM models WHERE id = $1 AND ${accessCondition}`,
+      params
+    );
+
+    if (modelCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Model not found or unauthorized' });
+    }
+
+    const modelName = modelCheck.rows[0].name || `model-${id}`;
+    const uploadPath = path.join(__dirname, '../../uploads/models', id);
+    
+    // Check if directory exists and get files
+    try {
+      const files = await fs.readdir(uploadPath);
+      
+      if (files.length === 0) {
+        return res.status(404).json({ error: 'No files available for download' });
+      }
+
+      // Set response headers for ZIP download
+      const zipFilename = `${modelName.replace(/[^a-zA-Z0-9-_]/g, '_')}.zip`;
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', `attachment; filename="${zipFilename}"`);
+
+      // Create ZIP archive
+      const archive = archiver('zip', {
+        zlib: { level: 9 } // Best compression
+      });
+
+      // Handle archive errors
+      archive.on('error', (err) => {
+        console.error('Archive error:', err);
+        if (!res.headersSent) {
+          res.status(500).json({ error: 'Failed to create archive' });
+        }
+      });
+
+      // Pipe archive to response
+      archive.pipe(res);
+
+      // Add files to archive
+      for (const filename of files) {
+        const filePath = path.join(uploadPath, filename);
+        try {
+          await fs.access(filePath);
+          archive.file(filePath, { name: filename });
+        } catch (fileErr) {
+          console.warn(`Skipping missing file: ${filename}`);
+        }
+      }
+
+      // Finalize the archive
+      await archive.finalize();
+
+    } catch (dirErr) {
+      return res.status(404).json({ error: 'Model files not found' });
+    }
+  } catch (err) {
+    console.error('Error creating bulk download:', err);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Failed to create bulk download' });
+    }
   }
 });
 
