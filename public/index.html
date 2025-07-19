@@ -1860,42 +1860,43 @@
 
         async function downloadModel(modelId) {
             try {
-                const response = await fetch(`/api/models/${modelId}/files`);
-                if (!response.ok) {
-                    throw new Error('Failed to get file list');
+                const headers = {};
+                if (authToken) {
+                    headers['Authorization'] = `Bearer ${authToken}`;
                 }
                 
-                const files = await response.json();
-                
-                if (files.length === 0) {
-                    alert('No files available for download. Model may not have been uploaded yet.');
+                const response = await fetch(`/api/models/${modelId}/download-all`, { headers });
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        alert('No files available for download. Model may not have been uploaded yet.');
+                    } else {
+                        throw new Error(`Download failed: ${response.status}`);
+                    }
                     return;
                 }
-
-                let downloadedCount = 0;
-                const downloadPromises = files.map(async (filename) => {
-                    try {
-                        const fileResponse = await fetch(`/api/models/${modelId}/download/${filename}`);
-                        if (fileResponse.ok) {
-                            const blob = await fileResponse.blob();
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = filename;
-                            a.click();
-                            URL.revokeObjectURL(url);
-                            downloadedCount++;
-                        } else {
-                            console.error(`Error downloading ${filename}: ${fileResponse.status}`);
-                        }
-                    } catch (err) {
-                        console.log(`Error downloading ${filename}: ${err.message}`);
-                    }
-                });
                 
-                await Promise.all(downloadPromises);
-                console.log(`Downloaded ${downloadedCount} files`);
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                
+                // Get filename from Content-Disposition header or use default
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let filename = `model-${modelId}.zip`;
+                if (contentDisposition) {
+                    const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+                    if (filenameMatch) {
+                        filename = filenameMatch[1];
+                    }
+                }
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                console.log(`Downloaded model ${modelId} as ${filename}`);
             } catch (err) {
+                console.error('Download failed:', err);
                 alert('Download failed: ' + err.message);
             }
         }
