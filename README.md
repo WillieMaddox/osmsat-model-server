@@ -65,6 +65,7 @@ A Node.js/Express API server for sharing TensorFlow.js models between OSMSAT use
 - `POST /api/models` - Create new model (authenticated)
 - `POST /api/models/:id/upload` - Upload model files with version and metadata (authenticated)
 - `GET /api/models/:id/download/:filename` - Download specific model file
+- `GET /api/models/:id/download-all` - Download all model files as ZIP archive
 - `PATCH /api/models/:id/visibility` - Change model visibility level (authenticated)
 
 ### Users
