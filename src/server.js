@@ -21,8 +21,13 @@ app.use(helmet({
       scriptSrcAttr: ["'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", "data:", "https:"],
+      // Remove upgrade-insecure-requests to prevent HTTP->HTTPS upgrades
     },
+    useDefaults: false,  // Don't use default CSP which includes upgrade-insecure-requests
   },
+  crossOriginOpenerPolicy: false,  // Disable COOP header that forces HTTPS
+  originAgentCluster: false,       // Disable Origin-Agent-Cluster header
+  hsts: false,                     // Disable HTTPS strict transport security
 }));
 app.use(compression());
 app.use(cors());
@@ -115,7 +120,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Something went wrong!' });
 });
 
-app.listen(PORT, async () => {
+app.listen(PORT, '0.0.0.0', async () => {
   console.log(`OSMSAT Model Server running on port ${PORT}`);
   await initializeDatabase();
 });
