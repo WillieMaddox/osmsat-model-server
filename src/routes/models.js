@@ -486,7 +486,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     // Delete model files
     const uploadPath = path.join(__dirname, '../../uploads/models', id);
     try {
-      await fs.rmdir(uploadPath, { recursive: true });
+      await fs.rm(uploadPath, { recursive: true });
     } catch (err) {
       console.log('Could not delete model files:', err.message);
     }
