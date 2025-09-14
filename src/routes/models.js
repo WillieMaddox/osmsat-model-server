@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs').promises;
+const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 const YAML = require('yamljs');
 const archiver = require('archiver');
@@ -23,10 +24,65 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({ 
+const upload = multer({
   storage,
   limits: { fileSize: 100 * 1024 * 1024 }
 });
+
+// Helper function to calculate MD5 hash of model files
+const calculateModelHash = async (files) => {
+  const hash = crypto.createHash('md5');
+
+  // Sort files for consistent hashing
+  const sortedFiles = files.sort((a, b) => a.originalname.localeCompare(b.originalname));
+
+  for (const file of sortedFiles) {
+    const fileContent = await fs.readFile(file.path);
+    hash.update(file.originalname); // Include filename in hash
+    hash.update(fileContent);
+  }
+
+  return hash.digest('hex');
+};
+
+// Helper function to format image size display
+const formatImageSize = (imgsz) => {
+  if (!imgsz || !Array.isArray(imgsz) || imgsz.length < 2) return null;
+
+  const [width, height] = imgsz;
+  return width === height ? width.toString() : `${width}x${height}`;
+};
+
+// Helper function to process and enhance metadata
+const processMetadata = (metadata) => {
+  const processed = { ...metadata };
+
+  // Calculate the number of classes and class list
+  if (processed.names) {
+    processed.num_classes = Object.keys(processed.names).length;
+    processed.class_list = Object.values(processed.names);
+  }
+
+  // Format image size display
+  if (processed.imgsz) {
+    processed.image_size_display = formatImageSize(processed.imgsz);
+  }
+
+  // Determine precision from the half-precision flag
+  if (processed.args.half !== undefined) {
+    processed.precision = processed.args.half ? 'FP16' : 'FP32';
+  }
+
+  // Determine quantization from int8 flag
+  if (processed.args.int8 !== undefined) {
+    processed.quantization = processed.args.int8 ? 'INT8' : 'None';
+  }
+
+  // Set the model format (hardcoded to TF.js for now)
+  processed.model_format = processed.model_format || 'TF.js';
+
+  return processed;
+};
 
 router.get('/', optionalAuth, async (req, res) => {
   try {
@@ -69,7 +125,14 @@ router.get('/', optionalAuth, async (req, res) => {
     params.push(limit, offset);
 
     const result = await pool.query(query, params);
-    res.json(result.rows);
+
+    // Process metadata for each model
+    const modelsWithProcessedMetadata = result.rows.map(model => ({
+      ...model,
+      metadata: model.metadata ? processMetadata(model.metadata) : {}
+    }));
+
+    res.json(modelsWithProcessedMetadata);
   } catch (err) {
     console.error('Error fetching models:', err);
     res.status(500).json({ error: 'Failed to fetch models' });
@@ -83,7 +146,7 @@ router.get('/:id', optionalAuth, async (req, res) => {
     const params = [id];
     
     if (req.user) {
-      // Authenticated users can access public, members, and their own private models
+      // Authenticated users can access 'public', 'members', and/or their own private models
       accessCondition = `(m.visibility IN ('public', 'members') OR m.user_id = $2)`;
       params.push(req.user.userId);
     } else {
@@ -108,7 +171,14 @@ router.get('/:id', optionalAuth, async (req, res) => {
       return res.status(404).json({ error: 'Model not found' });
     }
 
-    res.json(result.rows[0]);
+    // Process metadata for the model
+    const model = result.rows[0];
+    const processedModel = {
+      ...model,
+      metadata: model.metadata ? processMetadata(model.metadata) : {}
+    };
+
+    res.json(processedModel);
   } catch (err) {
     console.error('Error fetching model:', err);
     res.status(500).json({ error: 'Failed to fetch model' });
@@ -176,10 +246,20 @@ router.post('/:id/upload', authenticateToken, upload.array('files'), async (req,
       }
     }
 
+    // Calculate MD5 hash of all uploaded files
+    const modelHash = await calculateModelHash(req.files);
+
     // Add form-provided created_date to metadata if provided
     if (created_date) {
       metadata.form_created_date = created_date;
     }
+
+    // Add hash and format to metadata
+    metadata.model_hash = modelHash;
+    metadata.model_format = metadata.model_format || 'TF.js';
+
+    // Process metadata to add calculated fields
+    metadata = processMetadata(metadata);
 
     await pool.query(
       'UPDATE model_versions SET is_active = false WHERE model_id = $1',
@@ -209,7 +289,7 @@ router.get('/:id/files', optionalAuth, async (req, res) => {
     const params = [id];
     
     if (req.user) {
-      // Authenticated users can access public, members, and their own private models
+      // Authenticated users can access 'public', 'members', and/or their own private models
       accessCondition = `(visibility IN ('public', 'members') OR user_id = $2)`;
       params.push(req.user.userId);
     } else {
@@ -249,7 +329,7 @@ router.get('/:id/download/:filename', optionalAuth, async (req, res) => {
     const params = [id];
     
     if (req.user) {
-      // Authenticated users can access public, members, and their own private models
+      // Authenticated users can access 'public', 'members', and/or their own private models
       accessCondition = `(visibility IN ('public', 'members') OR user_id = $2)`;
       params.push(req.user.userId);
     } else {
@@ -268,7 +348,7 @@ router.get('/:id/download/:filename', optionalAuth, async (req, res) => {
 
     const filePath = path.join(__dirname, '../../uploads/models', id, filename);
     
-    // Check if file exists before trying to download
+    // Check if the file exists before trying to download
     try {
       await fs.access(filePath);
       res.download(filePath);
@@ -290,7 +370,7 @@ router.get('/:id/download-all', optionalAuth, async (req, res) => {
     const params = [id];
     
     if (req.user) {
-      // Authenticated users can access public, members, and their own private models
+      // Authenticated users can access 'public', 'members', and/or their own private models
       accessCondition = `(visibility IN ('public', 'members') OR user_id = $2)`;
       params.push(req.user.userId);
     } else {
@@ -310,7 +390,7 @@ router.get('/:id/download-all', optionalAuth, async (req, res) => {
     const modelName = modelCheck.rows[0].name || `model-${id}`;
     const uploadPath = path.join(__dirname, '../../uploads/models', id);
     
-    // Check if directory exists and get files
+    // Check if the directory exists and get files
     try {
       const files = await fs.readdir(uploadPath);
       
@@ -323,7 +403,7 @@ router.get('/:id/download-all', optionalAuth, async (req, res) => {
       res.setHeader('Content-Type', 'application/zip');
       res.setHeader('Content-Disposition', `attachment; filename="${zipFilename}"`);
 
-      // Create ZIP archive
+      // Create a ZIP archive
       const archive = archiver('zip', {
         zlib: { level: 9 } // Best compression
       });
@@ -339,7 +419,7 @@ router.get('/:id/download-all', optionalAuth, async (req, res) => {
       // Pipe archive to response
       archive.pipe(res);
 
-      // Add files to archive
+      // Add files to an archive
       for (const filename of files) {
         const filePath = path.join(uploadPath, filename);
         try {
@@ -406,12 +486,12 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     // Delete model files
     const uploadPath = path.join(__dirname, '../../uploads/models', id);
     try {
-      await fs.rmdir(uploadPath, { recursive: true });
+      await fs.rm(uploadPath, { recursive: true });
     } catch (err) {
       console.log('Could not delete model files:', err.message);
     }
 
-    // Delete model from database (cascade will handle model_versions)
+    // Delete the model from the database (cascade will handle model_versions)
     await pool.query('DELETE FROM models WHERE id = $1', [id]);
 
     res.json({ message: 'Model deleted successfully' });

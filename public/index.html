@@ -456,13 +456,27 @@
         
         .models-table td:nth-child(3), /* Task Type */
         .models-table td:nth-child(4), /* Visibility */
-        .models-table td:nth-child(5) { /* Zoom Level */
+        .models-table td:nth-child(5), /* Classes */
+        .models-table td:nth-child(6), /* Batch Size */
+        .models-table td:nth-child(7), /* Image Size */
+        .models-table td:nth-child(8), /* Precision */
+        .models-table td:nth-child(9), /* Quantization */
+        .models-table td:nth-child(10), /* MD5 */
+        .models-table td:nth-child(11), /* Format */
+        .models-table td:nth-child(12) { /* Zoom Level */
             text-align: center;
         }
-        
+
         .models-table th:nth-child(3), /* Task Type */
         .models-table th:nth-child(4), /* Visibility */
-        .models-table th:nth-child(5) { /* Zoom Level */
+        .models-table th:nth-child(5), /* Classes */
+        .models-table th:nth-child(6), /* Batch Size */
+        .models-table th:nth-child(7), /* Image Size */
+        .models-table th:nth-child(8), /* Precision */
+        .models-table th:nth-child(9), /* Quantization */
+        .models-table th:nth-child(10), /* MD5 */
+        .models-table th:nth-child(11), /* Format */
+        .models-table th:nth-child(12) { /* Zoom Level */
             text-align: center;
         }
         
@@ -555,7 +569,43 @@
         .table-container {
             overflow-x: auto;
         }
-        
+
+        /* Metadata column styling */
+        .metadata-hash {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.9em;
+            cursor: help;
+        }
+
+        .metadata-classes {
+            cursor: help;
+        }
+
+        /* Responsive design for additional columns */
+        @media (max-width: 1400px) {
+            .models-table th,
+            .models-table td {
+                padding: 12px 8px;
+                font-size: 0.9em;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .models-table th,
+            .models-table td {
+                padding: 10px 6px;
+                font-size: 0.85em;
+            }
+        }
+
+        @media (max-width: 1000px) {
+            .models-table th,
+            .models-table td {
+                padding: 8px 4px;
+                font-size: 0.8em;
+            }
+        }
+
         .hidden { display: none; }
         .error { color: #d32f2f; }
         .success { color: #388e3c; }
@@ -838,6 +888,13 @@
                                 <th class="sortable">Owner</th>
                                 <th class="sortable">Task Type</th>
                                 <th class="sortable">Visibility</th>
+                                <th class="sortable">Classes</th>
+                                <th class="sortable">Batch Size</th>
+                                <th class="sortable">Image Size</th>
+                                <th class="sortable">Precision</th>
+                                <th class="sortable">Quantization</th>
+                                <th class="sortable">MD5</th>
+                                <th class="sortable">Format</th>
                                 <th class="sortable">Zoom Level</th>
                                 <th class="sortable">Size</th>
                                 <th class="sortable">Version</th>
@@ -1802,7 +1859,7 @@
 
                 if (!Array.isArray(models)) {
                     console.error('Expected array of models, got:', models);
-                    modelsList.innerHTML = '<tr><td colspan="9">Error loading models: Invalid response format</td></tr>';
+                    modelsList.innerHTML = '<tr><td colspan="16">Error loading models: Invalid response format</td></tr>';
                     return;
                 }
 
@@ -1832,14 +1889,48 @@
                             <option value="public" ${model.visibility === 'public' ? 'selected' : ''}>Public</option>
                         </select>` : '';
                     
-                    const deleteButton = isOwner ? 
+                    const deleteButton = isOwner ?
                         `<button onclick="deleteModel(${model.id})" class="btn btn-danger btn-sm">Delete</button>` : '';
-                    
+
+                    // Process metadata for display (client-side fallback)
+                    const metadata = model.metadata || {};
+
+                    // Calculate derived values with fallbacks
+                    const numClasses = metadata.num_classes || (metadata.names ? Object.keys(metadata.names).length : null);
+                    const batchSize = metadata.batch || null;
+                    const imageSize = metadata.image_size_display ||
+                        (metadata.imgsz && Array.isArray(metadata.imgsz) && metadata.imgsz.length >= 2 ?
+                            (metadata.imgsz[0] === metadata.imgsz[1] ? metadata.imgsz[0].toString() : `${metadata.imgsz[0]}x${metadata.imgsz[1]}`) : null);
+                    const precision = metadata.precision ||
+                        (metadata.half !== undefined ? (metadata.half ? 'FP16' : 'FP32') : null);
+                    const quantization = metadata.quantization ||
+                        (metadata.int8 !== undefined ? (metadata.int8 ? 'INT8' : 'None') : null);
+                    const modelHash = metadata.model_hash || null;
+                    const format = metadata.model_format || 'TF.js';
+
+                    // Format displays
+                    const classDisplay = numClasses ?
+                        `<span class="metadata-classes" title="${(metadata.class_list || []).join(', ')}">${numClasses}</span>` : 'N/A';
+                    const batchDisplay = batchSize || 'N/A';
+                    const imageSizeDisplay = imageSize || 'N/A';
+                    const precisionDisplay = precision || 'N/A';
+                    const quantizationDisplay = quantization || 'N/A';
+                    const hashDisplay = modelHash ?
+                        `<span class="metadata-hash" title="${modelHash}">${modelHash.substring(0, 8)}...</span>` : 'N/A';
+                    const formatDisplay = format;
+
                     row.innerHTML = `
                         <td><strong>${model.name}</strong></td>
                         <td>${model.owner} ${visibilityToggle}</td>
                         <td><span class="task-badge task-${model.task_type}">${model.task_type}</span></td>
                         <td>${visibilityBadge}</td>
+                        <td>${classDisplay}</td>
+                        <td>${batchDisplay}</td>
+                        <td>${imageSizeDisplay}</td>
+                        <td>${precisionDisplay}</td>
+                        <td>${quantizationDisplay}</td>
+                        <td>${hashDisplay}</td>
+                        <td>${formatDisplay}</td>
                         <td>${model.zoom_level || 19}</td>
                         <td>${model.file_size ? Math.round(model.file_size / 1024 / 1024 * 100) / 100 + ' MB' : 'Unknown'}</td>
                         <td>${model.version || 'No version'}</td>
