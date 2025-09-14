@@ -11,7 +11,7 @@ const modelRoutes = require('./routes/models');
 const userRoutes = require('./routes/users');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 
 app.use(helmet({
   contentSecurityPolicy: {
